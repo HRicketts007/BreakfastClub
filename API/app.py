@@ -15,14 +15,14 @@ headers = {
     "x-rapidapi-key": "6849c0c816mshb4e9ebc6fe79ea9p17c2e7jsn8c871f624f35",
     "x-rapidapi-host": "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com"
 }
-DaysInAWeek = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+DaysInAWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 def get_ServingID(maxCalories,minCalories,FilterItems):
     querystring = {
-        "random":"true",
-        "number":"1",
-        "maxCalories":maxCalories,
-        "minCalories":minCalories,
+        "random": "true",
+        "number": "1",
+        "maxCalories": maxCalories,
+        "minCalories": minCalories,
     }
     url = "https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/findByNutrients"
     response = requests.get(url, headers=headers, params=(querystring|FilterItems)).json()
@@ -53,8 +53,8 @@ def set_Day(ServingsPerDay,DailyCaloricIntake,FilterItems):
     for num in range(int(ServingsPerDay)):
         ServingID = num + 1
         minCalories = maxCalories/2
-        Plate = get_ServingID(maxCalories,minCalories,FilterItems)
-        
+        Plate = get_ServingID(maxCalories, minCalories, FilterItems)
+
         PlateCalories = int(Plate[0]["calories"])
         maxCalories = maxCalories - PlateCalories
         totalCalories = totalCalories + PlateCalories
@@ -91,6 +91,10 @@ def get_meal_plan(plan_id):
     if plan:
         plan['_id'] = str(plan['_id'])  # Convert ObjectId to string
     return plan
+
+@app.route('/')
+def home():
+    return "Welcome to the Breakfast Club Meal Planner!"
 
 @app.route('/Generate_Day', methods=['GET'])
 def get_GenDay():
