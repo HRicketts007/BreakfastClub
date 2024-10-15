@@ -6,6 +6,8 @@ Henre Ricketts, Bang Pham, Siddhant Rai, Yasini Lavala, Nicolas Salazar, Hugo Ya
 How to run on local host:
 
 $cd breakfast-club
+
 $npm install
+
 $npm start
 
