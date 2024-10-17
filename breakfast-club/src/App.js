@@ -8,7 +8,7 @@ function App() {
    
        <>
         <Nav />
-       <div className="container d-flex flex-column justify-content-center align-items-center " style={{height:"100vh"}}>
+       <div className="container d-flex flex-column justify-content-center align-items-center p-5 " >
           <MealPlanner />
         </div>
 
