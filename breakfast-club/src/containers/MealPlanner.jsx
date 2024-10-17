@@ -26,11 +26,11 @@ const MealPlanner = () => {
     //api call to get meal plans by day
     try {
       const response = await axios.get(
-        "http://194.195.210.118:5000/Generate_Day",
+        `${process.env.REACT_APP_API_URL}/Generate_Day`,
         {
           params: {
-            DailyCaloricIntake: caloricIntake,
-            ServingsPerDay: servings,
+        DailyCaloricIntake: caloricIntake,
+        ServingsPerDay: servings,
           },
         }
       );
