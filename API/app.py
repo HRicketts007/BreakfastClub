@@ -1,5 +1,5 @@
 import requests
-from flask import Flask, request
+from flask import Flask, request, render_template, redirect, url_for, session, flash
 from pymongo import MongoClient
 from datetime import datetime
 from bson.objectid import ObjectId
@@ -10,12 +10,44 @@ mongo_uri = "mongodb+srv://User:.@mealprepper.4ko8v.mongodb.net/?retryWrites=tru
 client = MongoClient(mongo_uri)
 db = client.meal_prepper
 meal_plans = db.meal_plans
+users = db.users
 
 headers = {
     "x-rapidapi-key": "6849c0c816mshb4e9ebc6fe79ea9p17c2e7jsn8c871f624f35",
     "x-rapidapi-host": "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com"
 }
 DaysInAWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        if users.find_one({"username": username}):
+            flash("Username already exists", "error")
+            return redirect(url_for('register'))
+
+        users.insert_one({"username": username, "password": password})
+        flash("Registration successful! Please log in.", "success")
+        return redirect(url_for('login'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        # Find user in database
+        user = users.find_one({"username": username})
+
+        if user and password:
+            session['username'] = username
+            flash("Login successful!", "success")
+            return redirect(url_for('dashboard'))   #Do not have a dashboard yet
+        else:
+            flash("Invalid username or password", "error")
+            return redirect(url_for('login'))
 
 def get_ServingID(maxCalories,minCalories,FilterItems):
     querystring = {
@@ -91,10 +123,6 @@ def get_meal_plan(plan_id):
     if plan:
         plan['_id'] = str(plan['_id'])  # Convert ObjectId to string
     return plan
-
-@app.route('/')
-def home():
-    return "Welcome to the Breakfast Club Meal Planner!"
 
 @app.route('/Generate_Day', methods=['GET'])
 def get_GenDay():
