@@ -18,6 +18,8 @@ headers = {
 }
 DaysInAWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
+def is_logged_in():
+    return 'username' in session
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -48,6 +50,12 @@ def login():
         else:
             flash("Invalid username or password", "error")
             return redirect(url_for('login'))
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    flash("You have been logged out.", "info")
+    return redirect(url_for('login'))
 
 def get_ServingID(maxCalories,minCalories,FilterItems):
     querystring = {
@@ -108,7 +116,6 @@ def set_Week(ServingsPerDay,DailyCaloricIntake,FilterItems):
     
     return Week
 
-
 def save_meal_plan(plan_type, plan_data):
     document = {
         "type": plan_type,
@@ -116,6 +123,10 @@ def save_meal_plan(plan_type, plan_data):
         "plan": plan_data
     }
     result = meal_plans.insert_one(document)
+    if is_logged_in():
+        users.update_one(
+            {"$push": {"recent_meal_plan_ids": result.inserted_id}}
+        )
     return str(result.inserted_id)
 
 def get_meal_plan(plan_id):
