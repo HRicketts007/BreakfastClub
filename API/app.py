@@ -140,6 +140,12 @@ def get_meal_plan(plan_id):
         plan['_id'] = str(plan['_id'])  # Convert ObjectId to string
     return plan
 
+@app.route('/whoami', methods=['GET'])
+def who_am_i():
+    if 'username' in session:
+        return jsonify({"logged_in_as": session['username']})
+    else:
+        return jsonify({"message": "No user is logged in"})
 @app.route('/Generate_Day', methods=['GET'])
 def get_GenDay():
     DailyCaloricIntake = str(request.args.get('DailyCaloricIntake'))
