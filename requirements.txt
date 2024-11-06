@@ -1,5 +1,0 @@
-Flask
-React
-axios
-requests
-pymongo
