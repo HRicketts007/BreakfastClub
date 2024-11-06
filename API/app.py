@@ -1,11 +1,12 @@
 import requests
-from flask import Flask, request, render_template, redirect, url_for, session, flash
+from flask import Flask, request, render_template, redirect, url_for, session, flash, jsonify
 from pymongo import MongoClient
 from datetime import datetime
 from bson.objectid import ObjectId
 
 app = Flask(__name__)
 
+#app.secret_key = "your-secret-key"
 mongo_uri = "mongodb+srv://User:.@mealprepper.4ko8v.mongodb.net/?retryWrites=true&w=majority&appName=MealPrepper"
 client = MongoClient(mongo_uri)
 db = client.meal_prepper
@@ -22,34 +23,37 @@ def is_logged_in():
     return 'username' in session
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    data = request.json
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = data.get('username')
+        password = data.get('password')
 
         if users.find_one({"username": username}):
             flash("Username already exists", "error")
-            return redirect(url_for('register'))
+            #return redirect(url_for('register'))
+
 
         users.insert_one({"username": username, "password": password})
         flash("Registration successful! Please log in.", "success")
-        return redirect(url_for('login'))
-
+        #return redirect(url_for('login'))
+        return jsonify({"message": "User registered successfully"})
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    data = request.json
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = data.get('username')
+        password = data.get('password')
 
         # Find user in database
         user = users.find_one({"username": username})
 
-        if user and password:
+        if user and password == user['password']:
             session['username'] = username
-            flash("Login successful!", "success")
-            return redirect(url_for('dashboard'))   #Do not have a dashboard yet
+
+            return jsonify({"message": "Login successful!", "status": "success"})   #Do not have a dashboard yet
         else:
-            flash("Invalid username or password", "error")
-            return redirect(url_for('login'))
+
+            return jsonify({"message": "Invalid username or password", "status": "error"})
 
 @app.route('/logout')
 def logout():
@@ -125,6 +129,7 @@ def save_meal_plan(plan_type, plan_data):
     result = meal_plans.insert_one(document)
     if is_logged_in():
         users.update_one(
+            {"username": session['username']},
             {"$push": {"recent_meal_plan_ids": result.inserted_id}}
         )
     return str(result.inserted_id)
@@ -182,6 +187,8 @@ def retrieve_meal_plan(plan_id):
         return plan
     else:
         return {"error": "Meal plan not found"}, 404
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
