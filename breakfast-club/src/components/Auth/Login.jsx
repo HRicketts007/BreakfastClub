@@ -21,7 +21,7 @@ const Login = ({ setAuth }) => {
           username,
           password,
         },
-        { withCredentials: true }
+       
       );
       setAuth(true);
       setMessage("Login successful!");

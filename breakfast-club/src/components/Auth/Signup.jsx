@@ -22,7 +22,7 @@ const Signup = () => {
           username,
           password,
         },
-        { withCredentials: true }
+     
         
       );
       setMessage("Registration successful! Please log in.");
