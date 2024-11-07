@@ -16,7 +16,7 @@ const Login = ({ setAuth }) => {
 
     try {
       const response = await axios.post(
-        `http://45.56.112.26:6969/login`,
+        `http://localhost:5000/login`,
         {
           username,
           password,
@@ -27,6 +27,7 @@ const Login = ({ setAuth }) => {
         setMessage("Login successful!");
         navigate("/meal-planner");
       } else {
+        console.log(response.data)
         setMessage("Invalid username or password.");
       }
     } catch (error) {
