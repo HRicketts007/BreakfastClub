@@ -21,7 +21,6 @@ const Login = ({ setAuth }) => {
           username,
           password,
         },
-       
       );
       if (response.data.status === "success") {
         setAuth(true);
