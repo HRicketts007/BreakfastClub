@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import '../../App.css';
 
-const Signup = () => {
+const Signup = ({setAuth}) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -17,7 +17,7 @@ const Signup = () => {
 
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/register`,
+        `http://45.56.112.26:6969/register`,
         {
           username,
           password,
@@ -25,7 +25,14 @@ const Signup = () => {
      
         
       );
-      setMessage("Registration successful! Please log in.");
+      if (response.data.message === "User registered successfully") {
+        setMessage("Registration successful! Logging you in...");
+        // Log in the user automatically after successful signup
+        setAuth(true);
+        navigate("/meal-planner");
+      } else {
+        setMessage("Username already exists or failed to register.");
+      }
     } catch (error) {
       console.error("Error registering user:", error);
       setMessage("Username already exists or failed to register.");

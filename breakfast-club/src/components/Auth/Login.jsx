@@ -16,15 +16,20 @@ const Login = ({ setAuth }) => {
 
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/login`,
+        `http://45.56.112.26:6969/login`,
         {
           username,
           password,
         },
        
       );
-      setAuth(true);
-      setMessage("Login successful!");
+      if (response.data.status === "success") {
+        setAuth(true);
+        setMessage("Login successful!");
+        navigate("/meal-planner");
+      } else {
+        setMessage("Invalid username or password.");
+      }
     } catch (error) {
       setMessage("Invalid username or password.");
     }

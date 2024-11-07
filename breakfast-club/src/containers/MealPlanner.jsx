@@ -1,4 +1,5 @@
-import React, {  useState } from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const MealPlanner = () => {
@@ -8,37 +9,37 @@ const MealPlanner = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [expandedSummaries, setExpandedSummaries] = useState({});
+  const [planType, setPlanType] = useState("day");
+  const navigate = useNavigate();
 
-  
-  //generate meal plan for day
-  const generateDay = async () => {
-    //validate inputs
+  // Generate meal plan
+  const generateMealPlan = async () => {
+    // Validate inputs
     if (caloricIntake <= 0 || servings <= 0) {
       setError(
         "Daily Caloric Intake and Servings Per Day must be greater than zero."
       );
       return;
     }
-    //reset error & loading
+    // Reset error & loading
     setError("");
     setLoading(true);
 
-    //api call to get meal plans by day
+    // API call to get meal plans
     try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/Generate_Day`,
-        {
-          params: {
-        DailyCaloricIntake: caloricIntake,
-        ServingsPerDay: servings,
-          },
-        }
-      );
-      //set meal plan in state
+      const endpoint =
+        planType === "day" ? "/Generate_Day" : "/Generate_Week";
+      const response = await axios.get(`http://45.56.112.26:6969${endpoint}`, {
+        params: {
+          DailyCaloricIntake: caloricIntake,
+          ServingsPerDay: servings,
+        },
+      });
+      // Set meal plan in state
       setMealPlan(response.data.meal_plan);
       console.log(response.data.meal_plan);
     } catch (error) {
-      //handle error
+      // Handle error
       console.error("Error generating meal plan:", error);
       setError("Failed to generate meal plan. Please try again later.");
     } finally {
@@ -46,14 +47,14 @@ const MealPlanner = () => {
     }
   };
 
-  //format html content to plain text 
+  // Format HTML content to plain text
   const formatData = (htmlContent) => {
     const temp = document.createElement("div");
     temp.innerHTML = htmlContent;
     return temp.textContent || temp.innerText || "";
   };
 
-  //show recipe description 
+  // Show recipe description
   const toggleSummary = (index) => {
     setExpandedSummaries((prevState) => ({
       ...prevState,
@@ -61,15 +62,30 @@ const MealPlanner = () => {
     }));
   };
 
+  // Navigate to recipe page
+  const viewRecipe = (recipe, nutrition, instructions) => {
+    navigate("/recipe", {
+      state: { recipe, nutrition, instructions },
+    });
+  };
+
   return (
     <>
       <div className="container bg-white rounded-4 p-3 shadow-lg">
-       
         <h2 className="fw-bold">Meal Planner</h2>
+       
         <p>Input your calorie goals and target servings per day</p>
         <div className="d-flex flex-column ">
+          <select
+            className="form-select mb-3"
+            value={planType}
+            onChange={(e) => setPlanType(e.target.value)}
+          >
+            <option value="day">Generate by Day</option>
+            <option value="week">Generate by Week</option>
+          </select>
           <input
-          className="form-control"
+            className="form-control"
             type="number"
             placeholder="Caloric Intake"
             value={caloricIntake}
@@ -77,56 +93,63 @@ const MealPlanner = () => {
           />
           <br />
           <input
-          className="form-control"
-
+            className="form-control"
             type="number"
             placeholder="Servings Per Day"
             value={servings}
             onChange={(e) => setServings(e.target.value)}
           />
           <br />
-          <button className="btn btn-warning d-flex flex-row justify-content-center align-items-center" style={{height: "50px"}} onClick={generateDay}>
-          {loading ?  (
-        <div className="text-center text-white my-3">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      ) : "Generate Meal Plan"}
+          <button
+            className="btn btn-warning d-flex flex-row justify-content-center align-items-center"
+            style={{ height: "50px" }}
+            onClick={generateMealPlan}
+          >
+            {loading ? (
+              <div className="text-center text-white my-3">
+                <div className="spinner-border" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            ) : (
+              "Generate Meal Plan"
+            )}
           </button>
         </div>
-        {/* display error */}
-        {error && (
-          <div style={{ color: "red", marginTop: "10px" }}>{error}</div>
-        )}
+        {/* Display error */}
+        {error && <div style={{ color: "red", marginTop: "10px" }}>{error}</div>}
       </div>
-    
 
-      {/* display meal plan */}
+      {/* Display meal plan */}
       {mealPlan && (
         <>
           <br />
           <div className="container bg-white rounded-4 p-3 shadow-lg ">
-            <h3>Your Meal Plan for the Day</h3>
+            <h3>Your Meal Plan for the {planType === "day" ? "Day" : "Week"}</h3>
 
             <div className="row">
-              {/* display each recipe */}
+              {/* Display each recipe */}
               {Object.keys(mealPlan).map((key, index) => {
                 const recipe = mealPlan[key]?.Information;
-                const instructions = mealPlan[key]?.Instructions;
                 const nutrition = mealPlan[key]?.Nutrition;
-                if (recipe ) {
+                const instructions = recipe?.instructions; 
+               
+                if (recipe) {
                   const summary = formatData(recipe.summary);
                   const isExpanded = expandedSummaries[index];
                   const truncatedSummary = summary.slice(0, 100);
-                  console.log(recipe)
-                  // console.log(instructions)
-                  console.log(nutrition)
+               
+                  console.log(instructions);
+                
 
                   return (
                     <div className="col mb-4" key={index}>
                       <div className="card h-100" style={{ width: "18rem" }}>
-                      <img src={recipe.image} className="card-img-top" alt="Recipe Img"/>
+                        <img
+                          src={recipe.image}
+                          className="card-img-top"
+                          alt="Recipe Img"
+                        />
                         <div className="card-body d-flex flex-column">
                           <h4>{recipe.title}</h4>
                           <p>
@@ -145,11 +168,15 @@ const MealPlanner = () => {
                             {recipe.readyInMinutes} minutes
                           </p>
                           <p>
-                            Calories: {nutrition.calories} | Protein: 
-                            {nutrition.protein} | Fat: {nutrition.fat} | Carbs: {nutrition.carbs}
+                            Calories: {nutrition.calories} | Protein: {nutrition.protein} | Fat: {nutrition.fat} | Carbs: {nutrition.carbs}
                           </p>
                           <div className="mt-auto">
-                            <button className="btn btn-warning">View Recipe</button>
+                            <button 
+                              className="btn btn-warning"
+                              onClick={() => viewRecipe(recipe, nutrition, instructions)}
+                            >
+                              View Recipe
+                            </button>
                           </div>
                         </div>
                       </div>
