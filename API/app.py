@@ -16,6 +16,7 @@ meal_plans = db.meal_plans
 users = db.users
 
 headers = {
+
     "x-rapidapi-key": "6849c0c816mshb4e9ebc6fe79ea9p17c2e7jsn8c871f624f35",
     "x-rapidapi-host": "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com"
 }
