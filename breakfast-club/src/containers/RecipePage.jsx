@@ -1,10 +1,16 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import GroceryModal from "../components/GroceryModal";
 
 const RecipePage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { recipe, nutrition, instructions, ingredients } = location.state || {};
+  const [showGroceryModal, setShowGroceryModal] = useState(false);
+  const handleAddToGrocery = () => setShowGroceryModal(true);
+  const handleGroceryConfirm = (selectedIngredients) => {
+    setShowGroceryModal(false);
+  };
   //clear local storage on back btn
   // useEffect(() => {
   //   return () => {
@@ -68,6 +74,14 @@ const RecipePage = () => {
   }
 
   return (
+
+    <>
+     <GroceryModal
+  show={showGroceryModal}
+  onHide={() => setShowGroceryModal(false)}
+  ingredients={ingredients}
+  onConfirm={handleGroceryConfirm}
+/>
     <div className="container bg-white rounded-4 p-4 shadow-lg">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <button
@@ -170,8 +184,9 @@ const RecipePage = () => {
       </div>
 
       <div className="card border-0 shadow-sm mb-4 mt-3">
-        <div className="card-header bg-warning bg-opacity-10 border-0">
+        <div className="card-header bg-warning bg-opacity-10 border-0 d-flex align-items-center justify-content-between">
           <h5 className="fw-bold mb-">Ingredients</h5>
+          <button className="btn btn-warning" onClick={handleAddToGrocery}>Add to Grocery List</button>
         </div>
         <div className="card-body">
           {ingredients && ingredients.length > 0 ? (
@@ -212,7 +227,10 @@ const RecipePage = () => {
           )}
         </div>
       </div>
+      
     </div>
+    </>
+   
   );
 };
 

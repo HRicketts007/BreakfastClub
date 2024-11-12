@@ -7,6 +7,7 @@ import Signup from "./components/Auth/Signup";
 import RecipePage from "./containers/RecipePage";
 import Nav from "./components/Nav";
 import MyMeals from "./containers/MyMeals";
+import GroceryList from "./containers/GroceryList";
 
 function App() {
   const [auth, setAuth] = useState(() => {
@@ -28,15 +29,19 @@ function App() {
           <Route path="/login" element={<Login setAuth={handleAuth} />} />
           <Route
             path="/meal-planner"
-            element={!auth ? <MealPlanner /> : <Navigate to="/login" />}
+            element={auth ? <MealPlanner /> : <Navigate to="/login" />}
           />
           <Route
             path="/recipe"
-            element={!auth ? <RecipePage /> : <Navigate to="/login" />}
+            element={auth ? <RecipePage /> : <Navigate to="/login" />}
           />
            <Route
             path="/my-meals"
-            element={!auth ? <MyMeals /> : <Navigate to="/login" />}
+            element={auth ? <MyMeals /> : <Navigate to="/login" />}
+          />
+           <Route
+            path="/grocery-list"
+            element={auth ? <GroceryList /> : <Navigate to="/login" />}
           />
           <Route path="/" element={<Navigate to="/meal-planner" />} />
         </Routes>
