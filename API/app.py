@@ -3,10 +3,13 @@ from flask import Flask, request, render_template, redirect, url_for, session, f
 from pymongo import MongoClient
 from datetime import datetime
 from bson.objectid import ObjectId
+import Calendar
+import meal
+import time
 
 app = Flask(__name__)
 
-#app.secret_key = "your-secret-key"
+app.secret_key = "your-secret-key"
 mongo_uri = "mongodb+srv://User:.@mealprepper.4ko8v.mongodb.net/?retryWrites=true&w=majority&appName=MealPrepper"
 client = MongoClient(mongo_uri)
 db = client.meal_prepper
@@ -14,7 +17,7 @@ meal_plans = db.meal_plans
 users = db.users
 
 headers = {
-    "x-rapidapi-key": "6849c0c816mshb4e9ebc6fe79ea9p17c2e7jsn8c871f624f35",
+    "x-rapidapi-key": "c0d239cd76mshf7141d9ae816aeap194ed7jsn1345827527df",
     "x-rapidapi-host": "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com"
 }
 DaysInAWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -61,16 +64,39 @@ def logout():
     flash("You have been logged out.", "info")
     return redirect(url_for('login'))
 
-def get_ServingID(maxCalories,minCalories,FilterItems):
+
+def get_ServingID(maxCalories, minCalories, filter_items, max_retries=5):
     querystring = {
         "random": "true",
         "number": "1",
         "maxCalories": maxCalories,
         "minCalories": minCalories,
     }
+    querystring.update(filter_items)
+
     url = "https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/findByNutrients"
-    response = requests.get(url, headers=headers, params=(querystring|FilterItems)).json()
-    return response
+
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, headers=headers, params=querystring)
+            if response.status_code == 429:
+                print(f"Rate limit hit. Retrying in {2 ** attempt} seconds...")
+                time.sleep(2 ** attempt)  # Exponential backoff
+                continue
+            response.raise_for_status()
+            data = response.json()
+
+            if isinstance(data, list) and len(data) > 0:
+                return data
+            else:
+                print("No recipes found with the given parameters.")
+                return []
+        except requests.RequestException as e:
+            print(f"Error fetching serving ID: {e}")
+            return []
+
+    print("Max retries reached. Unable to fetch data from Spoonacular API.")
+    return []
 
 def get_PlateInfo(ID):
     url = f"https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/{ID}/information"
@@ -90,35 +116,38 @@ def get_PlateInfo(ID):
 
     return response
 
-def set_Day(ServingsPerDay,DailyCaloricIntake,FilterItems):
-    maxCalories = int(DailyCaloricIntake)
-    totalCalories = 0
-    Day = {}
-    for num in range(int(ServingsPerDay)):
-        ServingID = num + 1
-        minCalories = maxCalories/2
-        Plate = get_ServingID(maxCalories, minCalories, FilterItems)
 
-        PlateCalories = int(Plate[0]["calories"])
-        maxCalories = maxCalories - PlateCalories
-        totalCalories = totalCalories + PlateCalories
-        
-        PlateID = Plate[0]["id"]
-        PlateInfo = get_PlateInfo(PlateID)
-        temp = {f"Serving {str(ServingID)}":PlateInfo,}
+def set_Day(servings_per_day, daily_caloric_intake, filter_items):
+    max_calories = int(daily_caloric_intake)
+    total_calories = 0
+    day_plan = {}
 
-        Day = Day|temp
-    
-    return Day|{"totalCaloriesPerDiem":totalCalories}
+    for serving_num in range(int(servings_per_day)):
+        min_calories = max_calories // 2
+        plate = get_ServingID(max_calories, min_calories, filter_items)
 
-def set_Week(ServingsPerDay,DailyCaloricIntake,FilterItems):
-    Week = {}
-    for Day in DaysInAWeek:
-        TempDay = set_Day(ServingsPerDay,DailyCaloricIntake,FilterItems)
-        temp = { Day: TempDay}
-        Week = Week|temp
-    
-    return Week
+        if not plate:
+            break  # Stop if no more meals can be fetched
+
+        plate_calories = int(plate[0].get("calories", 0))
+        max_calories -= plate_calories
+        total_calories += plate_calories
+
+        plate_id = plate[0].get("id")
+        plate_info = get_PlateInfo(plate_id)
+        day_plan[f"Serving {serving_num + 1}"] = plate_info
+
+    day_plan["totalCaloriesPerDiem"] = total_calories
+    return day_plan
+
+
+def set_Week(servings_per_day, daily_caloric_intake, filter_items):
+    week_plan = {}
+    for day in DaysInAWeek:
+        daily_plan = set_Day(servings_per_day, daily_caloric_intake, filter_items)
+        week_plan[day] = daily_plan
+    return week_plan
+
 
 def save_meal_plan(plan_type, plan_data):
     document = {
@@ -126,65 +155,84 @@ def save_meal_plan(plan_type, plan_data):
         "created_at": datetime.now().strftime("%Y%m%d_%H%M%S"),
         "plan": plan_data
     }
-    result = meal_plans.insert_one(document)
-    if is_logged_in():
-        users.update_one(
-            {"username": session['username']},
-            {"$push": {"recent_meal_plan_ids": result.inserted_id}}
-        )
-    return str(result.inserted_id)
+    try:
+        result = meal_plans.insert_one(document)
+        if session.get('username'):
+            users.update_one(
+                {"username": session['username']},
+                {"$push": {"recent_meal_plan_ids": result.inserted_id}}
+            )
+        return str(result.inserted_id)
+    except Exception as e:
+        print(f"Error saving meal plan: {e}")
+        return None
+
 
 def get_meal_plan(plan_id):
-    plan = meal_plans.find_one({"_id": ObjectId(plan_id)})
-    if plan:
-        plan['_id'] = str(plan['_id'])  # Convert ObjectId to string
-    return plan
+    try:
+        plan = meal_plans.find_one({"_id": ObjectId(plan_id)})
+        if plan:
+            plan['_id'] = str(plan['_id'])
+        return plan
+    except Exception as e:
+        print(f"Error fetching meal plan: {e}")
+        return None
 
-@app.route('/whoami', methods=['GET'])
-def who_am_i():
-    if 'username' in session:
-        return jsonify({"logged_in_as": session['username']})
-    else:
-        return jsonify({"message": "No user is logged in"})
+
+# Flask route to generate a daily meal plan
 @app.route('/Generate_Day', methods=['GET'])
 def get_GenDay():
-    DailyCaloricIntake = str(request.args.get('DailyCaloricIntake'))
-    ServingsPerDay = str(request.args.get('ServingsPerDay'))
-    excludeIngredients = str(request.args.get('excludeIngredients'))
-    intolerances = str(request.args.get('intolerances'))
-    diet = str(request.args.get('diet'))
+    try:
+        daily_caloric_intake = request.args.get('DailyCaloricIntake')
+        servings_per_day = request.args.get('ServingsPerDay')
+        exclude_ingredients = request.args.get('excludeIngredients')
+        intolerances = request.args.get('intolerances')
+        diet = request.args.get('diet')
 
-    FilterItems = {
-        "diet": diet,
-        "excludeIngredients": excludeIngredients,
-        "intolerances": intolerances,
-    }
+        if not daily_caloric_intake or not servings_per_day:
+            return jsonify({"error": "Missing required parameters"}), 400
 
-    Day = set_Day(ServingsPerDay, DailyCaloricIntake, FilterItems)
-    
-    plan_id = save_meal_plan("day", Day)
-    
-    return {"plan_id": plan_id, "meal_plan": Day}
+        filter_items = {
+            "diet": diet,
+            "excludeIngredients": exclude_ingredients,
+            "intolerances": intolerances,
+        }
 
+        day_plan = set_Day(servings_per_day, daily_caloric_intake, filter_items)
+        plan_id = save_meal_plan("day", day_plan)
+
+        return jsonify({"plan_id": plan_id, "meal_plan": day_plan}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Flask route to generate a weekly meal plan
 @app.route('/Generate_Week', methods=['GET'])
 def get_GenWeek():
-    DailyCaloricIntake = str(request.args.get('DailyCaloricIntake'))
-    ServingsPerDay = str(request.args.get('ServingsPerDay'))
-    excludeIngredients = str(request.args.get('excludeIngredients'))
-    intolerances = str(request.args.get('intolerances'))
-    diet = str(request.args.get('diet'))
+    daily_caloric_intake = request.args.get('DailyCaloricIntake')
+    servings_per_day = request.args.get('ServingsPerDay')
+    exclude_ingredients = request.args.get('excludeIngredients')
+    intolerances = request.args.get('intolerances')
+    diet = request.args.get('diet')
 
-    FilterItems = {
+    if not daily_caloric_intake or not servings_per_day:
+        return jsonify({"error": "Missing required parameters"}), 400
+
+    filter_items = {
         "diet": diet,
-        "excludeIngredients": excludeIngredients,
+        "excludeIngredients": exclude_ingredients,
         "intolerances": intolerances,
     }
 
-    Week = set_Week(ServingsPerDay, DailyCaloricIntake, FilterItems)
-    
-    plan_id = save_meal_plan("week", Week)
-    
-    return {"plan_id": plan_id, "meal_plan": Week}
+    week_plan = set_Week(servings_per_day, daily_caloric_intake, filter_items)
+    plan_id = save_meal_plan("week", week_plan)
+
+    return jsonify({"plan_id": plan_id, "meal_plan": week_plan}), 200
+
+@app.route('/generate_calendar', methods=['GET','POST'])
+def generate_calendar(meals,num_meals_perday):
+    Calendar.generate_ics_calendar(meals, num_meals_perday, filename="meal_plan.ics")
 
 @app.route('/Get_Meal_Plan/<plan_id>', methods=['GET'])
 def retrieve_meal_plan(plan_id):
@@ -196,5 +244,6 @@ def retrieve_meal_plan(plan_id):
 
 
 
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(debug=True,host='0.0.0.0', port=5000)
