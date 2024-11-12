@@ -130,11 +130,10 @@ def save_meal_plan(plan_type, plan_data):
         "plan": plan_data
     }
     result = meal_plans.insert_one(document)
-    if is_logged_in():
-        users.update_one(
-            {"username": session['username']},
-            {"$push": {"recent_meal_plan_ids": result.inserted_id}}
-        )
+    users.update_one(
+        {"username": session['username']},
+        {"$push": {"recent_meal_plan_ids": result.inserted_id}}
+    )
     return str(result.inserted_id)
 
 def get_meal_plan(plan_id):
