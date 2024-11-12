@@ -16,7 +16,7 @@ const Login = ({ setAuth }) => {
 
     try {
       const response = await axios.post(
-        `http://localhost:5000/login`,
+        `http://45.56.112.26:6969/login`,
         {
           username,
           password,

@@ -17,7 +17,7 @@ const Signup = ({setAuth}) => {
 
     try {
       const response = await axios.post(
-        `http://localhost:5000/register`,
+        `http://45.56.112.26:6969/register`,
         {
           username,
           password,

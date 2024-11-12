@@ -63,18 +63,21 @@ const MealPlanner = () => {
   };
 
   // Navigate to recipe page
-  const viewRecipe = (recipe, nutrition, instructions) => {
+  const viewRecipe = (recipe, nutrition, instructions, ingredients) => {
+    const formattedIngredients = ingredients?.ingredients?.map(ing => 
+      `${ing.amount.us.value} ${ing.amount.us.unit} ${ing.name}`
+    ) || [];
     navigate("/recipe", {
-      state: { recipe, nutrition, instructions },
+      state: { recipe, nutrition, instructions, formattedIngredients },
     });
   };
 
   return (
     <>
       <div className="container bg-white rounded-4 p-3 shadow-lg">
-        <h2 className="fw-bold">Meal Planner</h2>
+        <h2 className="fw-bold">Generate Your Meal Plan</h2>
        
-        <p>Input your calorie goals and target servings per day</p>
+        <p>Set your goals, select your dietary preferences, and let us do the rest! Create a daily or weekly meal plan in seconds.</p>
         <div className="d-flex flex-column ">
           <select
             className="form-select mb-3"
@@ -103,6 +106,7 @@ const MealPlanner = () => {
           <button
             className="btn btn-warning d-flex flex-row justify-content-center align-items-center"
             style={{ height: "50px" }}
+            disabled={loading}
             onClick={generateMealPlan}
           >
             {loading ? (
@@ -117,7 +121,7 @@ const MealPlanner = () => {
           </button>
         </div>
         {/* Display error */}
-        {error && <div style={{ color: "red", marginTop: "10px" }}>{error}</div>}
+        {error && <div className="alert alert-danger" style={{ color: "red", marginTop: "10px" }}>{error}</div>}
       </div>
 
       {/* Display meal plan */}
@@ -127,19 +131,22 @@ const MealPlanner = () => {
           <div className="container bg-white rounded-4 p-3 shadow-lg ">
             <h3>Your Meal Plan for the {planType === "day" ? "Day" : "Week"}</h3>
 
-            <div className="row">
+            <div className="row row row-cols-1 row-cols-md-3 g-4">
               {/* Display each recipe */}
               {Object.keys(mealPlan).map((key, index) => {
                 const recipe = mealPlan[key]?.Information;
                 const nutrition = mealPlan[key]?.Nutrition;
+                const ingredients =  mealPlan[key]?.Ingredients;
                 const instructions = recipe?.instructions; 
                
                 if (recipe) {
                   const summary = formatData(recipe.summary);
                   const isExpanded = expandedSummaries[index];
                   const truncatedSummary = summary.slice(0, 100);
-               
+                  
+                  console.log(recipe)
                   console.log(instructions);
+                  console.log(ingredients)
                 
 
                   return (
@@ -173,7 +180,7 @@ const MealPlanner = () => {
                           <div className="mt-auto">
                             <button 
                               className="btn btn-warning"
-                              onClick={() => viewRecipe(recipe, nutrition, instructions)}
+                              onClick={() => viewRecipe(recipe, nutrition, instructions, ingredients)}
                             >
                               View Recipe
                             </button>

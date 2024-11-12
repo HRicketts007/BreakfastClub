@@ -27,11 +27,11 @@ function App() {
           <Route path="/login" element={<Login setAuth={handleAuth} />} />
           <Route
             path="/meal-planner"
-            element={auth ? <MealPlanner /> : <Navigate to="/login" />}
+            element={!auth ? <MealPlanner /> : <Navigate to="/login" />}
           />
           <Route
             path="/recipe"
-            element={auth ? <RecipePage /> : <Navigate to="/login" />}
+            element={!auth ? <RecipePage /> : <Navigate to="/login" />}
           />
           <Route path="/" element={<Navigate to="/meal-planner" />} />
         </Routes>
