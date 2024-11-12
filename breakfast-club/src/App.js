@@ -6,6 +6,7 @@ import Signup from "./components/Auth/Signup";
 
 import RecipePage from "./containers/RecipePage";
 import Nav from "./components/Nav";
+import MyMeals from "./containers/MyMeals";
 
 function App() {
   const [auth, setAuth] = useState(() => {
@@ -32,6 +33,10 @@ function App() {
           <Route
             path="/recipe"
             element={!auth ? <RecipePage /> : <Navigate to="/login" />}
+          />
+           <Route
+            path="/my-meals"
+            element={!auth ? <MyMeals /> : <Navigate to="/login" />}
           />
           <Route path="/" element={<Navigate to="/meal-planner" />} />
         </Routes>

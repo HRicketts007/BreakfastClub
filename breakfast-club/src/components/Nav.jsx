@@ -1,12 +1,21 @@
-import React from "react";
+import React, {useEffect} from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 
 const Nav = ({ auth, setAuth }) => {
   const navigate = useNavigate();
-  console.log(auth);
 
+  const openGenerate = () => {
+
+
+    // localStorage.removeItem('currentMealPlan');
+    navigate("/meal-planner")
+  };
+
+ 
+
+  //logout
   const handleLogout = async () => {
     try {
       const response = await axios.get("http://45.56.112.26:6969/logout", {
@@ -53,7 +62,7 @@ const Nav = ({ auth, setAuth }) => {
                <Link className="text-decoration-none text-dark" to="/grocery-list">Grocery List</Link>
             </li>
             <li class="nav-item">
-               <Link className="btn btn-dark text-decoration-none text-light" to="/meal-planner">Generate +</Link>
+               <Link className="btn btn-dark text-decoration-none text-light" to="/meal-planner" onClick={openGenerate} >Generate +</Link>
             </li>
             {auth && (
               <li class="nav-item">
