@@ -84,142 +84,200 @@ const MyMeals = () => {
     });
   };
 
-  if (loading) {
+  const renderMealCard = (recipe, nutrition, ingredients, instructions, dayIndex, mealIndex) => {
+    if (!recipe) return null;
+
+    const summary = formatData(recipe.summary || '');
+    const isExpanded = expandedSummaries[`${dayIndex}-${mealIndex}`];
+    const truncatedSummary = summary.slice(0, 100);
+
     return (
-      <div className="container py-5 text-center">
-        <div className="spinner-border text-warning" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
-  }
+      <div className="col-12 col-md-6 col-lg-4 mb-4">
+        <div className="card h-100 border-0 shadow-sm hover-shadow-lg transition-all">
+          <img
+            src={recipe.image}
+            className="card-img-top"
+            style={{ height: "200px", objectFit: "cover" }}
+            alt={recipe.title}
+          />
+          <div className="card-body d-flex flex-column gap-3">
+            <h5 className="card-title fw-bold">{recipe.title}</h5>
+            
+            <p className="card-text small text-muted">
+              {isExpanded ? summary : `${truncatedSummary}...`}
+              {summary.length > 100 && (
+                <button
+                  className="btn btn-link btn-sm p-0 ms-1"
+                  onClick={() => toggleSummary(`${dayIndex}-${mealIndex}`)}
+                >
+                  {isExpanded ? "Show Less" : "Show More"}
+                </button>
+              )}
+            </p>
 
-  return (
-    <div className="container py-5">
-      <h2 className="fw-bold mb-4">My Saved Meal Plans</h2>
+            <div className="d-flex justify-content-between text-muted small">
+              <span>
+                <i className="bi bi-people-fill me-1"></i>
+                {recipe.servings} servings
+              </span>
+              <span>
+                <i className="bi bi-clock-fill me-1"></i>
+                {recipe.readyInMinutes} min
+              </span>
+            </div>
 
-      {savedMealPlans.length === 0 ? (
-        <div className="alert alert-info">
-          <i className="bi bi-info-circle me-2"></i>
-          You haven't saved any meal plans yet. Generate a meal plan to get started!
-        </div>
-      ) : (
-        <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-          {savedMealPlans.map((plan, index) => (
-            <div className="col" key={plan.id}>
-              <div className="card h-100 border-0 shadow-sm hover-shadow-lg transition-all">
-                <div className="card-body">
-                  <h5 className="card-title fw-bold mb-3">
-                    {plan.type === "day" ? "Daily" : "Weekly"} Meal Plan
-                  </h5>
-                  <div className="mb-3 text-muted small">
-                    <p className="mb-1">
-                      <i className="bi bi-calendar me-2"></i>
-                      {formatDateTime(plan.created_at)}
-                    </p>
-                  </div>
-                  <button
-                    className="btn btn-warning w-100"
-                    onClick={() => viewMealPlan(plan.id)}
-                  >
-                    <i className="bi bi-eye me-2"></i>
-                    View Plan
-                  </button>
+            <div className="bg-light rounded-3 p-3">
+              <div className="row row-cols-2 g-2 text-center">
+                <div className="col">
+                  <div className="fw-bold text-warning mb-1">Calories</div>
+                  <div className="small">{nutrition.calories}</div>
+                </div>
+                <div className="col">
+                  <div className="fw-bold text-warning mb-1">Protein</div>
+                  <div className="small">{nutrition.protein}</div>
+                </div>
+                <div className="col">
+                  <div className="fw-bold text-warning mb-1">Fat</div>
+                  <div className="small">{nutrition.fat}</div>
+                </div>
+                <div className="col">
+                  <div className="fw-bold text-warning mb-1">Carbs</div>
+                  <div className="small">{nutrition.carbs}</div>
                 </div>
               </div>
             </div>
-          ))}
+
+            <button
+              className="btn btn-warning mt-auto w-100"
+              onClick={() => viewRecipe(recipe, nutrition, instructions, ingredients)}
+            >
+              View Recipe
+              <i className="bi bi-arrow-right-circle ms-2"></i>
+            </button>
+          </div>
         </div>
-      )}
+      </div>
+    );
+  };
 
-      {currentPlan && (
-        <div className="mt-5">
-          <h3 className="fw-bold mb-4">
-            {currentPlan.type === "day" ? "Daily" : "Weekly"} Meal Plan Details
-          </h3>
-          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            {Object.entries(currentPlan.plan).map(([key, mealData], index) => {
-              // Skip the totalCaloriesPerDiem key
-              if (key === 'totalCaloriesPerDiem') return null;
+  const renderCurrentPlan = () => {
+    if (!currentPlan) return null;
 
-              const recipe = mealData.Information;
-              const nutrition = mealData.Nutrition;
-              const ingredients = mealData.Ingredients;
-              const instructions = recipe?.instructions;
+    const daysOfWeek = [
+      'Sunday',
+      'Monday', 
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday'
+    ];
 
-              if (!recipe) return null;
+    if (currentPlan.type === "day") {
+      return (
+        <div className="row">
+          {Object.entries(currentPlan.plan).map(([key, mealData], index) => {
+            if (key === 'totalCaloriesPerDiem') return null;
+            return renderMealCard(
+              mealData.Information,
+              mealData.Nutrition,
+              mealData.Ingredients,
+              mealData.Information?.instructions,
+              0,
+              index
+            );
+          })}
+        </div>
+      );
+    }
 
-              const summary = formatData(recipe.summary || '');
-              const isExpanded = expandedSummaries[index];
-              const truncatedSummary = summary.slice(0, 100);
+    return Object.entries(currentPlan.plan).map(([day, meals], dayIndex) => (
+      <div key={dayIndex} className="mb-5">
+        <div className="d-flex align-items-center gap-3 mb-4">
+          <h4 className="mb-0 fw-bold text-warning">{daysOfWeek[dayIndex]}</h4>
+          <div className="flex-grow-1">
+            <div className="border-bottom border-warning opacity-50"></div>
+          </div>
+        </div>
+        <div className="row">
+          {Object.entries(meals).map(([mealKey, meal], mealIndex) => {
+            if (mealKey === 'totalCaloriesPerDiem') return null;
+            return renderMealCard(
+              meal.Information,
+              meal.Nutrition,
+              meal.Ingredients,
+              meal.Information?.instructions,
+              dayIndex,
+              mealIndex
+            );
+          })}
+        </div>
+      </div>
+    ));
+  };
 
-              return (
-                <div className="col" key={`${currentPlan.id}-${index}`}>
+  return (
+    <div className="container-fluid py-5 px-4">
+      <div className="row justify-content-center mb-5">
+        <div className="col-12 col-lg-10">
+          <h2 className="display-6 fw-bold mb-4">My Saved Meal Plans</h2>
+
+          {loading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-warning" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : savedMealPlans.length === 0 ? (
+            <div className="alert alert-warning d-flex align-items-center">
+              <i className="bi bi-info-circle-fill me-2"></i>
+              <div>You haven't saved any meal plans yet. Generate a meal plan to get started!</div>
+            </div>
+          ) : (
+            <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+              {savedMealPlans.map((plan) => (
+                <div className="col" key={plan.id}>
                   <div className="card h-100 border-0 shadow-sm hover-shadow-lg transition-all">
-                    <img
-                      src={recipe.image}
-                      className="card-img-top object-fit-cover"
-                      style={{ height: "200px" }}
-                      alt={recipe.title}
-                    />
-                    <div className="card-body d-flex flex-column">
-                      <h5 className="card-title fw-bold mb-3">
-                        {recipe.title}
-                      </h5>
-                      <p className="card-text text-muted small">
-                        {isExpanded ? summary : `${truncatedSummary}...`}
-                        {summary.length > 100 && (
-                          <button
-                            className="btn btn-link btn-sm p-0 ms-1"
-                            onClick={() => toggleSummary(index)}
-                          >
-                            {isExpanded ? "View Less" : "View More"}
-                          </button>
-                        )}
+                    <div className="card-body p-4">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h5 className="card-title fw-bold mb-0">
+                          {plan.type === "day" ? "Daily" : "Weekly"} Meal Plan
+                        </h5>
+                        <span className="badge bg-warning text-dark">
+                          {plan.type === "day" ? "1 Day" : "7 Days"}
+                        </span>
+                      </div>
+                      <p className="text-muted small mb-4">
+                        <i className="bi bi-calendar-event me-2"></i>
+                        {formatDateTime(plan.created_at)}
                       </p>
-                      <div className="d-flex justify-content-between mb-3 text-muted small">
-                        <span>
-                          <i className="bi bi-people me-1"></i>
-                          Serves: {recipe.servings}
-                        </span>
-                        <span>
-                          <i className="bi bi-clock me-1"></i>
-                          {recipe.readyInMinutes} min
-                        </span>
-                      </div>
-                      <div className="nutrition-info p-3 bg-light rounded-3 mb-3 small">
-                        <div className="row row-cols-2 g-2">
-                          <div className="col">
-                            Calories: {nutrition.calories}
-                          </div>
-                          <div className="col">
-                            Protein: {nutrition.protein}
-                          </div>
-                          <div className="col">Fat: {nutrition.fat}</div>
-                          <div className="col">Carbs: {nutrition.carbs}</div>
-                        </div>
-                      </div>
                       <button
-                        className="btn btn-warning mt-auto w-100"
-                        onClick={() =>
-                          viewRecipe(
-                            recipe,
-                            nutrition,
-                            instructions,
-                            ingredients
-                          )
-                        }
+                        className="btn btn-warning w-100"
+                        onClick={() => viewMealPlan(plan.id)}
                       >
-                        View Recipe <i className="bi bi-arrow-right-circle ms-2"></i>
+                        <i className="bi bi-eye me-2"></i>
+                        View Plan
                       </button>
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
+
+          {currentPlan && (
+            <div className="mt-5">
+              <div className="d-flex align-items-center mb-4">
+                <h3 className="display-6 fw-bold mb-0">
+                  {currentPlan.type === "day" ? "Daily" : "Weekly"} Meal Plan Details
+                </h3>
+                <div className="ms-3 flex-grow-1 border-bottom border-warning"></div>
+              </div>
+              {renderCurrentPlan()}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
