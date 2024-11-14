@@ -1,14 +1,11 @@
 import requests
-from flask import Flask, request, render_template, redirect, url_for, session, flash, jsonify
-from flask_cors import CORS
+from flask import Flask, request, render_template, redirect, url_for, session, flash
 from pymongo import MongoClient
 from datetime import datetime
 from bson.objectid import ObjectId
 
-#http://45.56.112.26:6969
 app = Flask(__name__)
-CORS(app)
-app.secret_key = "your-secret-key"
+
 mongo_uri = "mongodb+srv://User:.@mealprepper.4ko8v.mongodb.net/?retryWrites=true&w=majority&appName=MealPrepper"
 client = MongoClient(mongo_uri)
 db = client.meal_prepper
@@ -16,7 +13,6 @@ meal_plans = db.meal_plans
 users = db.users
 
 headers = {
-
     "x-rapidapi-key": "6849c0c816mshb4e9ebc6fe79ea9p17c2e7jsn8c871f624f35",
     "x-rapidapi-host": "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com"
 }
@@ -26,37 +22,34 @@ def is_logged_in():
     return 'username' in session
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    data = request.json
     if request.method == 'POST':
-        username = data.get('username')
-        password = data.get('password')
+        username = request.form.get('username')
+        password = request.form.get('password')
 
         if users.find_one({"username": username}):
             flash("Username already exists", "error")
-            #return redirect(url_for('register'))
-
+            return redirect(url_for('register'))
 
         users.insert_one({"username": username, "password": password})
         flash("Registration successful! Please log in.", "success")
-        #return redirect(url_for('login'))
-        return jsonify({"message": "User registered successfully"})
+        return redirect(url_for('login'))
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    data = request.json
     if request.method == 'POST':
-        username = data.get('username')
-        password = data.get('password')
+        username = request.form.get('username')
+        password = request.form.get('password')
 
         # Find user in database
         user = users.find_one({"username": username})
 
-        if user and password == user['password']:
+        if user and password:
             session['username'] = username
-
-            return jsonify({"message": "Login successful!", "status": "success"})   #Do not have a dashboard yet
+            flash("Login successful!", "success")
+            return redirect(url_for('dashboard'))   #Do not have a dashboard yet
         else:
-
-            return jsonify({"message": "Invalid username or password", "status": "error"})
+            flash("Invalid username or password", "error")
+            return redirect(url_for('login'))
 
 @app.route('/logout')
 def logout():
@@ -130,10 +123,10 @@ def save_meal_plan(plan_type, plan_data):
         "plan": plan_data
     }
     result = meal_plans.insert_one(document)
-    users.update_one(
-        {"username": session['username']},
-        {"$push": {"recent_meal_plan_ids": result.inserted_id}}
-    )
+    if is_logged_in():
+        users.update_one(
+            {"$push": {"recent_meal_plan_ids": result.inserted_id}}
+        )
     return str(result.inserted_id)
 
 def get_meal_plan(plan_id):
@@ -142,12 +135,6 @@ def get_meal_plan(plan_id):
         plan['_id'] = str(plan['_id'])  # Convert ObjectId to string
     return plan
 
-@app.route('/whoami', methods=['GET'])
-def who_am_i():
-    if 'username' in session:
-        return jsonify({"logged_in_as": session['username']})
-    else:
-        return jsonify({"message": "No user is logged in"})
 @app.route('/Generate_Day', methods=['GET'])
 def get_GenDay():
     DailyCaloricIntake = str(request.args.get('DailyCaloricIntake'))
@@ -195,8 +182,6 @@ def retrieve_meal_plan(plan_id):
         return plan
     else:
         return {"error": "Meal plan not found"}, 404
-
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
