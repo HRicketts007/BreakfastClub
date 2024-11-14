@@ -2,7 +2,7 @@
 import "./App.css";
 import Nav from "./components/Nav";
 import MealPlanner from "./containers/MealPlanner";
-
+import ExclusionDropdown from "./components/dropdownBox";
 function App() {
   return (
    

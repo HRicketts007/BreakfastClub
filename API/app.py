@@ -256,6 +256,8 @@ def generate_ics_calendar(meals, num_meals_perday, filename="meal_plan.ics"):
 def generate_calendar():
     plan_id = request.args.get('plan_id')
     meals_data = get_meal_plan(plan_id)
+    if not plan_id:
+        return {"error": "Meal plan not found"}, 404
     filename = "meal_plan.ics"
     generate_ics_calendar(meals=meals_data, num_meals_perday=2, filename=filename)
     return send_file(filename, as_attachment=True, download_name=filename, mimetype='text/calendar')
