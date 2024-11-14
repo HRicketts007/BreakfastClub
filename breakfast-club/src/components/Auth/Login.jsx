@@ -11,6 +11,7 @@ const Login = ({ setAuth }) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  //handle input
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -18,19 +19,23 @@ const Login = ({ setAuth }) => {
     });
   };
 
+  //login func
   const handleLogin = async () => {
+    //check inputs
     if (!formData.identifier || !formData.password) {
       setMessage("Email/Username and password cannot be empty.");
       return;
     }
 
     setLoading(true);
+    
+    //login endpoint
     try {
       const response = await axios.post(
         `http://45.56.112.26:6969/auth/login`,
         formData
       );
-
+      
       if (response.data.status === "success") {
         localStorage.setItem("token", response.data.id_token);
         setAuth(true);

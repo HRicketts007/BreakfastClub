@@ -15,11 +15,12 @@ const Nav = ({ auth, setAuth }) => {
 
  
 
-  //logout
+  //logout func
   const handleLogout = async () => {
     try {
-      const response = await axios.get("http://45.56.112.26:6969/logout", {
-        withCredentials: true, // Include credentials in the request
+      const response = await axios.get("http://45.56.112.26:6969/logout",
+         {
+        withCredentials: true,
       });
       setAuth(false);
       localStorage.removeItem("isAuthenticated");

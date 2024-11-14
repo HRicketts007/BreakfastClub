@@ -12,6 +12,7 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  //handle input
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -19,6 +20,7 @@ const Signup = () => {
     });
   };
 
+  //signup func
   const handleSignup = async () => {
     if (!formData.username || !formData.email || !formData.password) {
       setMessage("All fields are required.");
@@ -26,6 +28,8 @@ const Signup = () => {
     }
 
     setLoading(true);
+
+    //signup endpoint
     try {
       const response = await axios.post(
         `http://45.56.112.26:6969/auth/signup`,

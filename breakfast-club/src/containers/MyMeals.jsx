@@ -9,12 +9,14 @@ const MyMeals = () => {
   const navigate = useNavigate();
   const [expandedSummaries, setExpandedSummaries] = useState({});
 
+  //format data
   const formatData = (htmlContent) => {
     const temp = document.createElement("div");
     temp.innerHTML = htmlContent;
     return temp.textContent || temp.innerText || "";
   };
 
+  //toggle summary
   const toggleSummary = (index) => {
     setExpandedSummaries((prevState) => ({
       ...prevState,
@@ -22,6 +24,7 @@ const MyMeals = () => {
     }));
   };
 
+  //format date time
   const formatDateTime = (timestamp) => {
     const date = new Date(timestamp);
     return new Intl.DateTimeFormat('en-US', {
@@ -34,7 +37,7 @@ const MyMeals = () => {
     }).format(date);
   };
 
-  // Fetch all meal plans
+  //get user's meal plans
   useEffect(() => {
     const fetchMealPlans = async () => {
       try {
@@ -52,6 +55,7 @@ const MyMeals = () => {
     fetchMealPlans();
   }, []);
 
+  //view meal plan
   const viewMealPlan = async (planId) => {
     try {
       const response = await axios.get(`http://45.56.112.26:6969/Get_Meal_Plan/${planId}`);
@@ -63,6 +67,7 @@ const MyMeals = () => {
     }
   };
 
+  //view recipe
   const viewRecipe = (recipe, nutrition, instructions, ingredients) => {
     const formattedIngredients =
       ingredients?.ingredients
@@ -84,6 +89,7 @@ const MyMeals = () => {
     });
   };
 
+  //meal card ui
   const renderMealCard = (recipe, nutrition, ingredients, instructions, dayIndex, mealIndex) => {
     if (!recipe) return null;
 
@@ -160,6 +166,7 @@ const MyMeals = () => {
     );
   };
 
+  //plan ui
   const renderCurrentPlan = () => {
     if (!currentPlan) return null;
 

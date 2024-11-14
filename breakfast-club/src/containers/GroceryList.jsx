@@ -8,10 +8,12 @@ const GroceryList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  //get grocery list
   useEffect(() => {
     fetchGroceryItems();
   }, []);
 
+  //get grocery list func
   const fetchGroceryItems = async () => {
     try {
       const token = await getIdToken();
@@ -29,6 +31,7 @@ const GroceryList = () => {
     }
   };
 
+  //update grocery list func
   const updateGroceryItems = async (items) => {
     try {
       const token = await getIdToken();
@@ -42,6 +45,7 @@ const GroceryList = () => {
     }
   };
 
+  //checkbox func
   const toggleItem = (index) => {
     setCheckedItems(prev => ({
       ...prev,
@@ -49,12 +53,14 @@ const GroceryList = () => {
     }));
   };
 
+  //remove func
   const removeItem = async (index) => {
     const updatedItems = groceryItems.filter((_, i) => i !== index);
     setGroceryItems(updatedItems);
     await updateGroceryItems(updatedItems);
   };
 
+  //clear checked
   const clearCheckedItems = async () => {
     const remainingItems = groceryItems.filter((_, index) => !checkedItems[index]);
     setGroceryItems(remainingItems);
@@ -62,6 +68,7 @@ const GroceryList = () => {
     await updateGroceryItems(remainingItems);
   };
 
+  //clear all
   const clearAllItems = async () => {
     setGroceryItems([]);
     setCheckedItems({});
