@@ -8,12 +8,10 @@ import RecipePage from "./containers/RecipePage";
 import Nav from "./components/Nav";
 import MyMeals from "./containers/MyMeals";
 import GroceryList from "./containers/GroceryList";
+import { isAuthenticated } from './utils/auth';
 
 function App() {
-  const [auth, setAuth] = useState(() => {
-    const savedAuth = localStorage.getItem('isAuthenticated');
-    return savedAuth === 'true';
-  });
+  const [auth, setAuth] = useState(() => isAuthenticated());
   
   const handleAuth = (authStatus) => {
     setAuth(authStatus);

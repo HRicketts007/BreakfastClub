@@ -12,58 +12,43 @@ const MealPlanner = () => {
   const [planType, setPlanType] = useState("day");
   const navigate = useNavigate();
 
-  //load saved meal plan
+  // Load user's last meal plan
   useEffect(() => {
-    const savedMealPlan = localStorage.getItem("currentMealPlan");
-    if (savedMealPlan) {
-      const {
-        plan,
-        planType: savedPlanType,
-        caloricIntake: savedCalories,
-        servings: savedServings,
-      } = JSON.parse(savedMealPlan);
-      setMealPlan(plan);
-      setPlanType(savedPlanType);
-      setCaloricIntake(savedCalories);
-      setServings(savedServings);
-    }
+    const fetchLastMealPlan = async () => {
+      try {
+        const response = await axios.get('http://45.56.112.26:6969/user/meal_plans');
+        if (response.data.meal_plans?.length > 0) {
+          const lastPlan = response.data.meal_plans[0]; // Get most recent plan
+          setMealPlan(lastPlan.plan);
+          setPlanType(lastPlan.type);
+          setCaloricIntake(lastPlan.caloricIntake);
+          setServings(lastPlan.servings);
+        }
+      } catch (error) {
+        console.error("Error fetching last meal plan:", error);
+      }
+    };
+
+    fetchLastMealPlan();
   }, []);
-  //generate meal plan
+
+  // Generate meal plan
   const generateMealPlan = async () => {
     if (caloricIntake <= 0 || servings <= 0) {
-      setError(
-        "Daily Caloric Intake and Servings Per Day must be greater than zero."
-      );
+      setError("Daily Caloric Intake and Servings Per Day must be greater than zero.");
       return;
     }
     setError("");
     setLoading(true);
 
-    //api call
     try {
       const endpoint = planType === "day" ? "/Generate_Day" : "/Generate_Week";
       const response = await axios.get(`http://45.56.112.26:6969${endpoint}`, {
         params: {
           DailyCaloricIntake: caloricIntake,
           ServingsPerDay: servings,
-        },
+        }
       });
-
-      const newPlan = {
-        planId: response.data.plan_id,
-        planType: planType,
-        caloricIntake: caloricIntake,
-        servings: servings,
-        date: new Date().toISOString(),
-        planData: response.data.meal_plan,
-      };
-
-      //get existing plans from localStorage
-      const existingPlans = JSON.parse(localStorage.getItem("mealPlans")) || [];
-      //add the new plan
-      existingPlans.push(newPlan);
-      //save back to localStorage
-      localStorage.setItem("mealPlans", JSON.stringify(existingPlans));
 
       setMealPlan(response.data.meal_plan);
     } catch (error) {
