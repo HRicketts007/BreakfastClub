@@ -1,37 +1,65 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import axios from 'axios';
+import { getIdToken } from '../utils/auth';
 
-const GroceryModal = ({ show, onHide, ingredients, onConfirm }) => {
+// Add a request interceptor
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add a response interceptor
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear token and redirect to login
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const isAuthenticated = () => {
+  return !!localStorage.getItem('token');
+};
+
+export const logout = () => {
+  localStorage.removeItem('token');
+  localStorage.setItem('isAuthenticated', 'false');
+};
+
+const GroceryModal = ({ show, onHide, ingredients = [], onConfirm }) => {
   const [selectedIngredients, setSelectedIngredients] = useState(ingredients || []);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-
-  useEffect(() => {
-    const modal = document.getElementById('groceryModal');
-    if (show) {
-      modal.classList.add('show');
-      modal.style.display = 'block';
-      document.body.classList.add('modal-open');
-      setIsLoading(false);
-      setShowSuccess(false);
-    } else {
-      modal.classList.remove('show');
-      modal.style.display = 'none';
-      document.body.classList.remove('modal-open');
-    }
-  }, [show]);
-
-  const removeIngredient = (index) => {
-    setSelectedIngredients(selectedIngredients.filter((_, i) => i !== index));
-  };
+  const [error, setError] = useState(null);
 
   const handleConfirm = async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      const existingList = JSON.parse(localStorage.getItem('groceryList')) || [];
-      const updatedList = [...existingList, ...selectedIngredients];
-      localStorage.setItem('groceryList', JSON.stringify(updatedList));
+      const token = await getIdToken();
+      const response = await axios.get('http://45.56.112.26:6969/grocery/items', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const existingItems = response.data.status === 'success' ? response.data.items : [];
+      const updatedItems = [...existingItems, ...selectedIngredients];
+      
+      await axios.post('http://45.56.112.26:6969/grocery/items',
+        { items: updatedItems },
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
       
       setShowSuccess(true);
       setTimeout(() => {
@@ -39,76 +67,89 @@ const GroceryModal = ({ show, onHide, ingredients, onConfirm }) => {
         onConfirm(selectedIngredients);
         onHide();
       }, 1500);
-    } catch (error) {
-      console.error('Error saving to grocery list:', error);
+    } catch (err) {
+      setError('Failed to update grocery list');
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const toggleIngredient = (index) => {
+    if (!ingredients || !ingredients.length) return;
+    
+    const ingredient = ingredients[index];
+    setSelectedIngredients(prev => 
+      prev.includes(ingredient)
+        ? prev.filter(item => item !== ingredient)
+        : [...prev, ingredient]
+    );
+  };
+
   return (
-    <div className="modal fade" id="groceryModal" tabIndex="-1" aria-labelledby="groceryModalLabel" aria-hidden="true">
-      <div className="modal-dialog modal-dialog-centered">
+    <div className="modal fade" id="groceryModal" tabIndex="-1">
+      <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div className="modal-content">
-          <div className="modal-header border-0">
-            <h5 className="modal-title fw-bold" id="groceryModalLabel">Add to Grocery List</h5>
-            <button 
-              type="button" 
-              className="btn-close" 
-              data-bs-dismiss="modal" 
-              aria-label="Close" 
-              onClick={onHide}
-              disabled={isLoading}
-            ></button>
+          <div className="modal-header">
+            <h5 className="modal-title">Add to Grocery List</h5>
+            <button type="button" className="btn-close" onClick={onHide}></button>
           </div>
+          
           <div className="modal-body">
-            {showSuccess ? (
-              <div className="alert alert-success d-flex align-items-center" role="alert">
-                <i className="bi bi-check-circle-fill me-2"></i>
-                <div>Items successfully added to your grocery list!</div>
+            {isLoading ? (
+              <div className="text-center py-4">
+                <div className="spinner-border text-warning" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
               </div>
-            ) : (
+            ) : error ? (
+              <div className="alert alert-danger">{error}</div>
+            ) : ingredients && ingredients.length > 0 ? (
               <div className="list-group">
-                {selectedIngredients.map((ingredient, index) => (
-                  <div key={index} className="list-group-item d-flex justify-content-between align-items-center">
-                    <span>{ingredient}</span>
-                    <button 
-                      className="btn btn-link text-danger p-0" 
-                      onClick={() => removeIngredient(index)}
-                      disabled={isLoading}
-                    >
-                      <i className="bi bi-x-circle"></i>
-                    </button>
-                  </div>
+                {ingredients.map((ingredient, index) => (
+                  <label key={index} className="list-group-item">
+                    <div className="d-flex align-items-center">
+                      <input
+                        type="checkbox"
+                        className="form-check-input me-2"
+                        checked={selectedIngredients.includes(ingredient)}
+                        onChange={() => toggleIngredient(index)}
+                      />
+                      <span>{ingredient}</span>
+                    </div>
+                  </label>
                 ))}
               </div>
+            ) : (
+              <p className="text-center text-muted">No ingredients found</p>
             )}
           </div>
-          <div className="modal-footer border-0">
-            <button 
-              type="button" 
-              className="btn btn-secondary" 
-              data-bs-dismiss="modal" 
-              onClick={onHide}
-              disabled={isLoading}
-            >
-              Cancel
-            </button>
-            <button 
-              type="button" 
-              className="btn btn-warning d-flex align-items-center" 
-              onClick={handleConfirm}
-              disabled={isLoading || showSuccess}
-            >
-              {isLoading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Adding...
-                </>
-              ) : (
-                'Add to List'
-              )}
-            </button>
+
+          <div className="modal-footer">
+            {showSuccess ? (
+              <div className="text-success w-100 text-center">
+                <i className="bi bi-check-circle me-2"></i>
+                Added to grocery list!
+              </div>
+            ) : (
+              <>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={onHide}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-warning"
+                  onClick={handleConfirm}
+                  disabled={selectedIngredients.length === 0}
+                >
+                  Add Selected Items
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

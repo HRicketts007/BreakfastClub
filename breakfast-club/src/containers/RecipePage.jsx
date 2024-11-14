@@ -5,10 +5,13 @@ import GroceryModal from "../components/GroceryModal";
 const RecipePage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { recipe, nutrition, instructions, ingredients } = location.state || {};
+  const { recipe, nutrition, instructions, ingredients, planId } = location.state || {};
   const [showGroceryModal, setShowGroceryModal] = useState(false);
-  const handleAddToGrocery = () => setShowGroceryModal(true);
+
   const handleGroceryConfirm = (selectedIngredients) => {
+    const existingItems = JSON.parse(localStorage.getItem('groceryList')) || [];
+    const updatedItems = [...existingItems, ...selectedIngredients];
+    localStorage.setItem('groceryList', JSON.stringify(updatedItems));
     setShowGroceryModal(false);
   };
   //clear local storage on back btn
@@ -21,6 +24,8 @@ const RecipePage = () => {
   //   };
   // }, [location.pathname]);
 
+
+  
   //format instructions
   const formatInstructions = (htmlContent) => {
     if (!htmlContent) return [];
@@ -77,11 +82,12 @@ const RecipePage = () => {
 
     <>
      <GroceryModal
-  show={showGroceryModal}
-  onHide={() => setShowGroceryModal(false)}
-  ingredients={ingredients}
-  onConfirm={handleGroceryConfirm}
-/>
+      show={showGroceryModal}
+      onHide={() => setShowGroceryModal(false)}
+      ingredients={ingredients || []}
+      planId={planId}
+      onConfirm={handleGroceryConfirm}
+    />
     <div className="container bg-white rounded-4 p-4 shadow-lg">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <button
@@ -98,7 +104,7 @@ const RecipePage = () => {
             <i className="bi bi-share me-2"></i>Share
           </button>
           <button className="btn btn-dark">
-            <i className="bi bi-bookmark me-2"></i>Save
+            <i className="bi bi-heart me-2"></i>Favorite
           </button>
         </div>
       </div>
@@ -186,7 +192,7 @@ const RecipePage = () => {
       <div className="card border-0 shadow-sm mb-4 mt-3">
         <div className="card-header bg-warning bg-opacity-10 border-0 d-flex align-items-center justify-content-between">
           <h5 className="fw-bold mb-">Ingredients</h5>
-          <button className="btn btn-warning" onClick={handleAddToGrocery}>Add to Grocery List</button>
+          <button className="btn btn-warning" data-bs-toggle="modal" data-bs-target="#groceryModal">Add to Grocery List</button>
         </div>
         <div className="card-body">
           {ingredients && ingredients.length > 0 ? (

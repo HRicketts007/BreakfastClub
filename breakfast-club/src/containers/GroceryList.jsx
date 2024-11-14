@@ -1,13 +1,46 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { getIdToken } from '../utils/auth';
 
 const GroceryList = () => {
   const [groceryItems, setGroceryItems] = useState([]);
   const [checkedItems, setCheckedItems] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const savedItems = JSON.parse(localStorage.getItem('groceryList')) || [];
-    setGroceryItems(savedItems);
+    fetchGroceryItems();
   }, []);
+
+  const fetchGroceryItems = async () => {
+    try {
+      const token = await getIdToken();
+      const response = await axios.get('http://45.56.112.26:6969/grocery/items', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.status === 'success') {
+        setGroceryItems(response.data.items);
+      }
+    } catch (err) {
+      setError('Failed to fetch grocery items');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateGroceryItems = async (items) => {
+    try {
+      const token = await getIdToken();
+      await axios.post('http://45.56.112.26:6969/grocery/items', 
+        { items },
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+    } catch (err) {
+      setError('Failed to update grocery items');
+      console.error(err);
+    }
+  };
 
   const toggleItem = (index) => {
     setCheckedItems(prev => ({
@@ -16,24 +49,45 @@ const GroceryList = () => {
     }));
   };
 
-  const removeItem = (index) => {
+  const removeItem = async (index) => {
     const updatedItems = groceryItems.filter((_, i) => i !== index);
     setGroceryItems(updatedItems);
-    localStorage.setItem('groceryList', JSON.stringify(updatedItems));
+    await updateGroceryItems(updatedItems);
   };
 
-  const clearCheckedItems = () => {
+  const clearCheckedItems = async () => {
     const remainingItems = groceryItems.filter((_, index) => !checkedItems[index]);
     setGroceryItems(remainingItems);
     setCheckedItems({});
-    localStorage.setItem('groceryList', JSON.stringify(remainingItems));
+    await updateGroceryItems(remainingItems);
   };
 
-  const clearAllItems = () => {
+  const clearAllItems = async () => {
     setGroceryItems([]);
     setCheckedItems({});
-    localStorage.removeItem('groceryList');
+    await updateGroceryItems([]);
   };
+
+  if (loading) {
+    return (
+      <div className="container py-5 text-center">
+        <div className="spinner-border text-warning" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container py-5">
+        <div className="alert alert-danger">
+          <i className="bi bi-exclamation-circle me-2"></i>
+          {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-5">

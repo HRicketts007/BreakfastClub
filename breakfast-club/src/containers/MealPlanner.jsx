@@ -12,6 +12,13 @@ const MealPlanner = () => {
   const [planType, setPlanType] = useState("day");
   const navigate = useNavigate();
 
+  const scrollToRecipes = () => {
+    window.scrollTo({
+      top: window.scrollY + 1000,
+      behavior: 'smooth'
+    });
+  };
+
   // Load user's last meal plan
   useEffect(() => {
     const fetchLastMealPlan = async () => {
@@ -105,97 +112,222 @@ const MealPlanner = () => {
   };
 
   return (
-    <>
-      <div className="container py-5">
-        <div className="row justify-content-center">
-          <div className="col-lg-8">
-            <div className="card border-0 shadow-lg rounded-4">
-              <div className="card-body p-4 p-md-5">
-                <h2 className="card-title fw-bold mb-4 text-center">
-                  Generate Your Meal Plan
-                </h2>
-                <p className="text-muted text-center mb-4">
-                  Set your goals, select your dietary preferences, and let us do
-                  the rest! Create a daily or weekly meal plan in seconds.
+    <div className="container-fluid py-4 px-4">
+      {/* Main Form Section */}
+      <div className="row justify-content-center mb-5">
+        <div className="col-12 col-md-10 col-lg-8">
+          <div className="card border-0 shadow-lg rounded-4 bg-light">
+            <div className="card-body p-4 p-md-5">
+              <div className="text-center mb-5">
+                <h2 className="display-6 fw-bold mb-3">Meal Plan Generator</h2>
+                <p className="text-muted lead">
+                  Create your personalized meal plan in seconds
                 </p>
-
-                <form className="needs-validation" noValidate>
-                  <div className="mb-4">
-                    <select
-                      className="form-select form-select-lg"
-                      value={planType}
-                      onChange={(e) => setPlanType(e.target.value)}
-                    >
-                      <option value="day">Daily Plan</option>
-                      <option value="week">Weekly Plan</option>
-                    </select>
-                  </div>
-
-                  <div className="mb-4">
-                    <input
-                      className="form-control form-control-lg"
-                      type="number"
-                      placeholder="Daily Caloric Intake"
-                      value={caloricIntake}
-                      onChange={(e) => setCaloricIntake(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <input
-                      className="form-control form-control-lg"
-                      type="number"
-                      placeholder="Servings Per Day"
-                      value={servings}
-                      onChange={(e) => setServings(e.target.value)}
-                    />
-                  </div>
-
-                  <button
-                    className="btn btn-warning btn-lg w-100 text-white fw-bold"
-                    disabled={loading}
-                    onClick={generateMealPlan}
-                    type="button"
-                  >
-                    {loading ? (
-                      <div className="d-flex align-items-center justify-content-center">
-                        <span
-                          className="spinner-border spinner-border-sm me-2"
-                          role="status"
-                        />
-                        Generating...
-                      </div>
-                    ) : (
-                      "Generate Meal Plan"
-                    )}
-                  </button>
-                </form>
-
-                {error && (
-                  <div className="alert alert-danger mt-4 mb-0" role="alert">
-                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                    {error}
-                  </div>
-                )}
               </div>
+
+              <form className="needs-validation" noValidate>
+                <div className="row g-4">
+                  {/* Plan Type Selector */}
+                  <div className="col-12">
+                    <div className="btn-group w-100" role="group">
+                      <input
+                        type="radio"
+                        className="btn-check"
+                        name="planType"
+                        id="dailyPlan"
+                        checked={planType === "day"}
+                        onChange={() => setPlanType("day")}
+                      />
+                      <label className="btn btn-outline-warning" htmlFor="dailyPlan">
+                        Daily Plan
+                      </label>
+
+                      <input
+                        type="radio"
+                        className="btn-check"
+                        name="planType"
+                        id="weeklyPlan"
+                        checked={planType === "week"}
+                        onChange={() => setPlanType("week")}
+                      />
+                      <label className="btn btn-outline-warning" htmlFor="weeklyPlan">
+                        Weekly Plan
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Caloric Intake Input */}
+                  <div className="col-12 col-md-6">
+                    <div className="form-floating">
+                      <input
+                        type="number"
+                        className="form-control form-control-lg"
+                        id="caloricIntake"
+                        placeholder="Daily Calories"
+                        value={caloricIntake}
+                        onChange={(e) => setCaloricIntake(e.target.value)}
+                      />
+                      <label htmlFor="caloricIntake">Daily Caloric Intake</label>
+                    </div>
+                  </div>
+
+                  {/* Servings Input */}
+                  <div className="col-12 col-md-6">
+                    <div className="form-floating">
+                      <input
+                        type="number"
+                        className="form-control form-control-lg"
+                        id="servings"
+                        placeholder="Servings"
+                        value={servings}
+                        onChange={(e) => setServings(e.target.value)}
+                      />
+                      <label htmlFor="servings">Servings Per Day</label>
+                    </div>
+                  </div>
+
+                  {/* Generate Button */}
+                  <div className="col-12">
+                    <button
+                      className="btn btn-warning btn-lg w-100 py-3 text-white fw-bold"
+                      disabled={loading}
+                      onClick={generateMealPlan}
+                      type="button"
+                    >
+                      {loading ? (
+                        <div className="d-flex align-items-center justify-content-center gap-2">
+                          <div className="spinner-border spinner-border-sm" role="status" />
+                          <span>Generating your perfect meal plan...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <i className="bi bi-magic me-2"></i>
+                          Generate Meal Plan
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              {error && (
+                <div className="alert alert-danger mt-4 mb-0 d-flex align-items-center" role="alert">
+                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                  <div>{error}</div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Display meal plan */}
+      {/* Meal Plan Results */}
       {mealPlan && (
-        <div className="container py-5">
-          <div className="row justify-content-center mb-5">
-            <div className="col-lg-8 text-center">
-              <h3 className="fw-bold mb-4">
-                Your Meal Plan for the {planType === "day" ? "Day" : "Week"}
-              </h3>
+        <div className="row g-4">
+          <div className="col-12 text-center mb-4">
+            <h3 className="display-6 fw-bold">
+              Your {planType === "day" ? "Daily" : "Weekly"} Meal Plan
+            </h3>
+            <p className="lead text-muted">
+              {planType === "day" ? "Today's" : "This week's"} delicious recipes await!
+            </p>
+            <div className="bg-warning rounded-pill px-2 py-1 hover-shadow-lg transition-all" style={{cursor: "pointer", width: "fit-content", margin: "0 auto"}} onClick={scrollToRecipes}>
+              <i className="bi bi-chevron-down text-dark"></i>
             </div>
           </div>
 
-          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            {Object.keys(mealPlan).map((key, index) => {
+          {planType === "week" ? (
+            Object.entries(mealPlan).map(([day, meals], dayIndex) => (
+              <div key={dayIndex} className="col-12 mb-4">
+                <h4 className="mb-3">Day {dayIndex + 1}</h4>
+                <div className="row g-4">
+                  {Object.entries(meals).map(([mealKey, meal], mealIndex) => {
+                    const recipe = meal?.Information;
+                    const nutrition = meal?.Nutrition;
+                    const ingredients = meal?.Ingredients;
+                    const instructions = recipe?.instructions;
+
+                    if (recipe) {
+                      const summary = formatData(recipe.summary);
+                      const isExpanded = expandedSummaries[`${dayIndex}-${mealIndex}`];
+                      const truncatedSummary = summary.slice(0, 100);
+
+                      return (
+                        <div className="col-12 col-md-6 col-lg-4" key={mealIndex}>
+                          <div className="card h-100 border-0 shadow-sm hover-shadow-lg transition-all">
+                            <img
+                              src={recipe.image}
+                              className="card-img-top"
+                              style={{ height: "200px", objectFit: "cover" }}
+                              alt={recipe.title}
+                            />
+
+                            <div className="card-body d-flex flex-column gap-3">
+                              <h5 className="card-title fw-bold">{recipe.title}</h5>
+
+                              <p className="card-text small text-muted">
+                                {isExpanded ? summary : `${truncatedSummary}...`}
+                                {summary.length > 100 && (
+                                  <button
+                                    className="btn btn-link btn-sm p-0 ms-1"
+                                    onClick={() => toggleSummary(`${dayIndex}-${mealIndex}`)}
+                                  >
+                                    {isExpanded ? "Show Less" : "Show More"}
+                                  </button>
+                                )}
+                              </p>
+
+                              <div className="d-flex justify-content-between text-muted small">
+                                <span>
+                                  <i className="bi bi-people-fill me-1"></i>
+                                  {recipe.servings} servings
+                                </span>
+                                <span>
+                                  <i className="bi bi-clock-fill me-1"></i>
+                                  {recipe.readyInMinutes} min
+                                </span>
+                              </div>
+
+                              <div className="bg-light rounded-3 p-3">
+                                <div className="row row-cols-2 g-2 text-center">
+                                  <div className="col">
+                                    <div className="fw-bold text-warning mb-1">Calories</div>
+                                    <div className="small">{nutrition.calories}</div>
+                                  </div>
+                                  <div className="col">
+                                    <div className="fw-bold text-warning mb-1">Protein</div>
+                                    <div className="small">{nutrition.protein}</div>
+                                  </div>
+                                  <div className="col">
+                                    <div className="fw-bold text-warning mb-1">Fat</div>
+                                    <div className="small">{nutrition.fat}</div>
+                                  </div>
+                                  <div className="col">
+                                    <div className="fw-bold text-warning mb-1">Carbs</div>
+                                    <div className="small">{nutrition.carbs}</div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <button
+                                className="btn btn-warning mt-auto w-100"
+                                onClick={() => viewRecipe(recipe, nutrition, instructions, ingredients, recipe.id)}
+                              >
+                                View Recipe
+                                <i className="bi bi-arrow-right-circle ms-2"></i>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+              </div>
+            ))
+          ) : (
+            Object.keys(mealPlan).map((key, index) => {
               const recipe = mealPlan[key]?.Information;
               const nutrition = mealPlan[key]?.Nutrition;
               const ingredients = mealPlan[key]?.Ingredients;
@@ -207,69 +339,68 @@ const MealPlanner = () => {
                 const truncatedSummary = summary.slice(0, 100);
 
                 return (
-                  <div className="col" key={index}>
+                  <div className="col-12 col-md-6 col-lg-4" key={index}>
                     <div className="card h-100 border-0 shadow-sm hover-shadow-lg transition-all">
                       <img
                         src={recipe.image}
-                        className="card-img-top object-fit-cover"
-                        style={{ height: "200px" }}
+                        className="card-img-top"
+                        style={{ height: "200px", objectFit: "cover" }}
                         alt={recipe.title}
                       />
-                      <div className="card-body d-flex flex-column">
-                        <h5 className="card-title fw-bold mb-3">
-                          {recipe.title}
-                        </h5>
 
-                        <p className="card-text text-muted small">
+                      <div className="card-body d-flex flex-column gap-3">
+                        <h5 className="card-title fw-bold">{recipe.title}</h5>
+
+                        <p className="card-text small text-muted">
                           {isExpanded ? summary : `${truncatedSummary}...`}
                           {summary.length > 100 && (
                             <button
                               className="btn btn-link btn-sm p-0 ms-1"
                               onClick={() => toggleSummary(index)}
                             >
-                              {isExpanded ? "View Less" : "View More"}
+                              {isExpanded ? "Show Less" : "Show More"}
                             </button>
                           )}
                         </p>
 
-                        <div className="d-flex justify-content-between mb-3 text-muted small">
+                        <div className="d-flex justify-content-between text-muted small">
                           <span>
-                            <i className="bi bi-people me-1"></i>
-                            Serves: {recipe.servings}
+                            <i className="bi bi-people-fill me-1"></i>
+                            {recipe.servings} servings
                           </span>
                           <span>
-                            <i className="bi bi-clock me-1"></i>
+                            <i className="bi bi-clock-fill me-1"></i>
                             {recipe.readyInMinutes} min
                           </span>
                         </div>
 
-                        <div className="nutrition-info p-3 bg-light rounded-3 mb-3 small">
-                          <div className="row row-cols-2 g-2">
+                        <div className="bg-light rounded-3 p-3">
+                          <div className="row row-cols-2 g-2 text-center">
                             <div className="col">
-                              Calories: {nutrition.calories}
+                              <div className="fw-bold text-warning mb-1">Calories</div>
+                              <div className="small">{nutrition.calories}</div>
                             </div>
                             <div className="col">
-                              Protein: {nutrition.protein}
+                              <div className="fw-bold text-warning mb-1">Protein</div>
+                              <div className="small">{nutrition.protein}</div>
                             </div>
-                            <div className="col">Fat: {nutrition.fat}</div>
-                            <div className="col">Carbs: {nutrition.carbs}</div>
+                            <div className="col">
+                              <div className="fw-bold text-warning mb-1">Fat</div>
+                              <div className="small">{nutrition.fat}</div>
+                            </div>
+                            <div className="col">
+                              <div className="fw-bold text-warning mb-1">Carbs</div>
+                              <div className="small">{nutrition.carbs}</div>
+                            </div>
                           </div>
                         </div>
 
                         <button
                           className="btn btn-warning mt-auto w-100"
-                          onClick={() =>
-                            viewRecipe(
-                              recipe,
-                              nutrition,
-                              instructions,
-                              ingredients,
-                              recipe.id
-                            )
-                          }
+                          onClick={() => viewRecipe(recipe, nutrition, instructions, ingredients, recipe.id)}
                         >
-                          <i className="bi bi-arrow-right-circle me-2"></i>
                           View Recipe
+                          <i className="bi bi-arrow-right-circle ms-2"></i>
                         </button>
                       </div>
                     </div>
@@ -277,11 +408,11 @@ const MealPlanner = () => {
                 );
               }
               return null;
-            })}
-          </div>
+            })
+          )}
         </div>
       )}
-    </>
+    </div>
   );
 };
 
