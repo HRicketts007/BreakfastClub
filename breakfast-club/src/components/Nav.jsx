@@ -1,7 +1,7 @@
 import React, {useEffect} from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-
+import logo from "../assets/Logo.png";
 
 const Nav = ({ auth, setAuth }) => {
   const navigate = useNavigate();
@@ -37,7 +37,7 @@ const Nav = ({ auth, setAuth }) => {
   return (
     <nav className="navbar navbar-expand-lg bg-warning">
       <div className="container-fluid d-flex justify-content-between w-100">
-        <h3 className="navbar-brand fw-bold mb-0 " >The Breakfast Club</h3>
+       <div className="navbar-brand fw-bold mb-0 " > <img src={logo} alt="logo"  style={{width: "5rem", height: "auto"}} /></div>
 
         <button
           className="navbar-toggler"

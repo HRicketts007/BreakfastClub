@@ -32,7 +32,7 @@ const Signup = () => {
     //signup endpoint
     try {
       const response = await axios.post(
-        `http://45.56.112.26:6969/auth/signup`,
+        `http://45.56.112.26:6969/auth/register`,
         formData
       );
 
@@ -40,11 +40,11 @@ const Signup = () => {
         setMessage("Signup successful! Please log in.");
         navigate("/login");
       } else {
-        setMessage(response.data.message || "Signup failed");
+        setMessage(response.data.message || "Signup failed. Please try again.");
       }
     } catch (error) {
       console.error("Signup error:", error);
-      setMessage(error.response?.data?.message || "Signup failed");
+      setMessage(error.response?.data?.message || "Signup failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -68,7 +68,26 @@ const Signup = () => {
                 </span>
               </p>
               <div className="d-flex flex-column">
-                <input
+                <div className="flex-row align-items-center justify-content-between"> 
+              
+                 <input
+                  className="form-control mb-2"
+                  type="text"
+                  name="firstName"
+                  placeholder="First Name"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                />
+                  <input
+                  className="form-control mb-2"
+                  type="text"
+                  name="lastName"
+                  placeholder="Last Name"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                />
+                </div>
+                  <input
                   className="form-control mb-2"
                   type="text"
                   name="username"

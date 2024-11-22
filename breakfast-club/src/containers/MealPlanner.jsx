@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Select from "react-select";
 import CreatableSelect from "react-select/creatable";
 import axios from "axios";
-
+import logo from "../assets/Logo.png";
 //diet options
 const DIET_OPTIONS = [
   { value: 'gluten free', label: 'Gluten Free' },
@@ -216,6 +216,7 @@ const MealPlanner = () => {
           <div className="card border-0 shadow-lg rounded-4 bg-light">
             <div className="card-body p-4 p-md-5">
               <div className="text-center mb-5">
+                <img src={logo} alt="logo"  style={{width: "5rem", height: "auto"}} />
                 <h2 className="display-6 fw-bold mb-3">Meal Plan Generator</h2>
                 <p className="text-muted lead">
                   Create your personalized meal plan in seconds
