@@ -1,10 +1,12 @@
 import React, {useEffect} from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import logo from "../assets/Logo.png";
+import '../App.css'
 
 const Nav = ({ auth, setAuth }) => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const openGenerate = () => {
 
@@ -37,7 +39,7 @@ const Nav = ({ auth, setAuth }) => {
   return (
     <nav className="navbar navbar-expand-lg bg-warning">
       <div className="container-fluid d-flex justify-content-between w-100">
-       <div className="navbar-brand fw-bold mb-0 " > <img src={logo} alt="logo"  style={{width: "5rem", height: "auto"}} /></div>
+       <div className="navbar-brand fw-bold mb-0 " > <img onClick={() => navigate("/meal-planner")} className="hover point" src={logo} alt="logo"  style={{width: "5rem", height: "auto"}} /></div>
 
         <button
           className="navbar-toggler"
@@ -56,18 +58,28 @@ const Nav = ({ auth, setAuth }) => {
            
           
             <li class="nav-item">
-               <Link className="text-decoration-none text-dark" to="/my-meals">My Meals</Link>
+               <Link 
+                 className={` hover  text-decoration-none text-dark ${location.pathname === '/my-meals' ? 'fw-bold ' : ''}`} 
+                 to="/my-meals"
+               >
+                 My Meals
+               </Link>
             </li>
           
             <li class="nav-item">
-               <Link className="text-decoration-none text-dark" to="/grocery-list">Grocery List</Link>
+               <Link 
+                 className={`hover text-decoration-none text-dark ${location.pathname === '/grocery-list' ? 'fw-bold ' : ''}`} 
+                 to="/grocery-list"
+               >
+                 Grocery List
+               </Link>
             </li>
             <li class="nav-item">
-               <Link className="btn btn-dark text-decoration-none text-light" to="/meal-planner" onClick={openGenerate} >Create +</Link>
+               <Link className="btn btn-dark hover text-decoration-none text-light" to="/meal-planner" onClick={openGenerate} >Create +</Link>
             </li>
             {auth && (
               <li class="nav-item">
-                <button className="btn btn-outline-dark" onClick={handleLogout}>
+                <button className="btn btn-outline-dark hover" onClick={handleLogout}>
                   Logout
                 </button>
               </li>

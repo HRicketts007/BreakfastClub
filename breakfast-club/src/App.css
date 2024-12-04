@@ -2,7 +2,12 @@ body {
  
   background-color: rgb(240, 240, 240);
 }
-
+.hover {
+  transition: all 0.3s ease;
+}
+.hover:hover {
+  transform: translateY(-5px);
+}
 .hover-shadow-lg {
   transition: all 0.3s ease;
 }
@@ -16,3 +21,6 @@ body {
   transition: all 0.3s ease;
 }
 
+.point {
+  cursor: pointer;
+}
