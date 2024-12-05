@@ -312,7 +312,7 @@ def generate_ics_calendar(meals, num_meals_perday, filename="meal_plan.ics", sta
     num_days = 7 if plan_type == 'week' else 1
     
     # Group meals into days
-    meals_per_day = num_meals_perday * 3  # 3 meal times per day
+    meals_per_day = num_meals_perday
     meal_groups = [meals[i:i + meals_per_day] for i in range(0, len(meals), meals_per_day)]
     
     # Loop through the grouped meals and assign them to days
