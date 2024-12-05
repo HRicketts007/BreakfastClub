@@ -229,6 +229,14 @@ def meal_defractorization(meal_plan):
     meals = []
     plan_data = meal_plan['plan']
     DaysInAWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    
+    # Count number of servings per day
+    num_servings = 0
+    if meal_plan['type'] == 'day':
+        num_servings = sum(1 for key in plan_data if key.startswith('Serving'))
+    elif meal_plan['type'] == 'week' and DaysInAWeek[0] in plan_data:
+        num_servings = sum(1 for key in plan_data[DaysInAWeek[0]] if key.startswith('Serving'))
+    
     # For Daily meal plans
     if meal_plan['type'] == 'day':
         for serving_key in plan_data:
@@ -242,9 +250,8 @@ def meal_defractorization(meal_plan):
                 meal_name = information['title']
                 source_url = information['sourceUrl']
                 meal = {'meal_id': meal_id, 'ready_in': ready_in, 'servings': servings, 'summary': summary,
-                           'meal_name': meal_name, 'sourceUrl': source_url}
+                       'meal_name': meal_name, 'sourceUrl': source_url}
                 meals.append(meal)
-
 
     # For weekly meal plans
     elif meal_plan['type'] == 'week':
@@ -261,9 +268,10 @@ def meal_defractorization(meal_plan):
                         meal_name = information['title']
                         meal_url = information['sourceUrl']
                         meal = {'meal_id': meal_id, 'ready_in': ready_in, 'servings': servings, 'summary': summary,
-                                'meal_name': meal_name, 'sourceUrl': meal_url}
+                               'meal_name': meal_name, 'sourceUrl': meal_url}
                         meals.append(meal)
-    return meals
+    
+    return meals, num_servings
 
 def save_meal_plan(plan_type, plan_data, user_id=None):
     """Save a meal plan to Firestore"""
@@ -531,7 +539,7 @@ def generate_calendar():
         if not meals_data:
             return jsonify({"error": "Meal plan not found"}), 404
             
-        meals = meal_defractorization(meals_data)
+        meals, num_servings = meal_defractorization(meals_data)
         
         # Parse start date based on plan type
         if plan_type == 'week' and start_date:
@@ -543,7 +551,7 @@ def generate_calendar():
         filename = "meal_plan.ics"
         generate_ics_calendar(
             meals=meals,
-            #num_meals_perday=3,
+            num_meals_perday=num_servings,
             filename=filename,
             start_date=selected_date,
             plan_type=plan_type
