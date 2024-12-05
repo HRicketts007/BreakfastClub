@@ -1,13 +1,92 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, Routes, Route } from "react-router-dom";
 
-const MyMeals = () => {
-  const [savedMealPlans, setSavedMealPlans] = useState([]);
-  const [currentPlan, setCurrentPlan] = useState(null);
+const handleExportCalendar = async (planId, planType) => {
+  try {
+    // Show date picker based on plan type
+    const startDate = await new Promise((resolve) => {
+      const picker = document.createElement('input');
+      picker.type = planType === 'day' ? 'date' : 'week';
+      picker.style.display = 'none';
+      picker.style.position = 'fixed';
+      picker.style.top = '50%';
+      picker.style.left = '50%';
+      picker.style.transform = 'translate(-50%, -50%)';
+      picker.style.zIndex = '9999';
+      picker.onchange = (e) => {
+        document.body.removeChild(picker);
+        resolve(e.target.value);
+      };
+      document.body.appendChild(picker);
+      picker.showPicker();
+      picker.addEventListener('cancel', () => {
+        document.body.removeChild(picker);
+        resolve(null);
+      });
+    });
+
+    if (!startDate) return; // User cancelled
+
+    const response = await axios.get(
+      `http://45.56.112.26:6969/generate_calendar?plan_id=${planId}&start_date=${startDate}&plan_type=${planType}`,
+      { responseType: 'blob' }
+    );
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'meal_plan.ics');
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error exporting calendar:', error);
+    alert('Failed to export calendar. Please try again.');
+  }
+};
+
+// Create new component for individual meal plan view
+const MealPlanView = () => {
+  const { planId } = useParams();
+  const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
   const [expandedSummaries, setExpandedSummaries] = useState({});
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchPlan = async () => {
+      try {
+        console.log("Fetching plan with ID:", planId);
+        const response = await axios.get(`http://45.56.112.26:6969/Get_Meal_Plan/${planId}`);
+        console.log("Raw response:", response.data);
+        setPlan({
+          type: response.data.meal_plan.type,
+          plan: response.data.meal_plan.plan,
+          created_at: response.data.meal_plan.created_at
+        });
+      } catch (error) {
+        console.error("Error fetching meal plan:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlan();
+  }, [planId]);
+
+  //format date time
+  const formatDateTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    }).format(date);
+  };
 
   //format data
   const formatData = (htmlContent) => {
@@ -24,49 +103,6 @@ const MyMeals = () => {
     }));
   };
 
-  //format date time
-  const formatDateTime = (timestamp) => {
-    const date = new Date(timestamp);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    }).format(date);
-  };
-
-  //get user's meal plans
-  useEffect(() => {
-    const fetchMealPlans = async () => {
-      try {
-        const response = await axios.get('http://45.56.112.26:6969/user/meal_plans');
-        if (response.data.status === 'success') {
-          setSavedMealPlans(response.data.meal_plans);
-        }
-      } catch (error) {
-        console.error("Error fetching meal plans:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMealPlans();
-  }, []);
-
-  //view meal plan
-  const viewMealPlan = async (planId) => {
-    try {
-      const response = await axios.get(`http://45.56.112.26:6969/Get_Meal_Plan/${planId}`);
-      if (response.data.status === 'success') {
-        setCurrentPlan(response.data.meal_plan);
-      }
-    } catch (error) {
-      console.error("Error fetching meal plan:", error);
-    }
-  };
-
   //view recipe
   const viewRecipe = (recipe, nutrition, instructions, ingredients) => {
     const formattedIngredients =
@@ -79,7 +115,7 @@ const MyMeals = () => {
         })
         .filter((ing) => ing) || [];
 
-    navigate("/recipe", {
+    navigate(`/recipe/${recipe.id}`, {
       state: {
         recipe,
         nutrition,
@@ -168,22 +204,25 @@ const MyMeals = () => {
 
   //plan ui
   const renderCurrentPlan = () => {
-    if (!currentPlan) return null;
+    if (!plan?.plan) {
+      console.log("No plan data available:", plan);
+      return null;
+    }
 
     const daysOfWeek = [
-      'Sunday',
       'Monday', 
       'Tuesday',
       'Wednesday',
       'Thursday',
       'Friday',
-      'Saturday'
+      'Saturday',
+      'Sunday'
     ];
 
-    if (currentPlan.type === "day") {
+    if (plan.type === "day") {
       return (
         <div className="row">
-          {Object.entries(currentPlan.plan).map(([key, mealData], index) => {
+          {Object.entries(plan.plan).map(([key, mealData], index) => {
             if (key === 'totalCaloriesPerDiem') return null;
             return renderMealCard(
               mealData.Information,
@@ -198,34 +237,124 @@ const MyMeals = () => {
       );
     }
 
-    return Object.entries(currentPlan.plan).map(([day, meals], dayIndex) => (
-      <div key={dayIndex} className="mb-5">
-        <div className="d-flex align-items-center gap-3 mb-4">
-          <h4 className="mb-0 fw-bold text-warning">{daysOfWeek[dayIndex]}</h4>
-          <div className="flex-grow-1">
-            <div className="border-bottom border-warning opacity-50"></div>
+    // Modify the weekly plan rendering to sort by day
+    return Object.entries(plan.plan)
+      .filter(([day]) => daysOfWeek.includes(day))
+      .sort((a, b) => daysOfWeek.indexOf(a[0]) - daysOfWeek.indexOf(b[0]))
+      .map(([day, meals], dayIndex) => (
+        <div key={dayIndex} className="mb-5">
+          <div className="d-flex align-items-center gap-3 mb-4">
+            <h4 className="mb-0 fw-bold text-warning">{day}</h4>
+            <div className="flex-grow-1">
+              <div className="border-bottom border-warning opacity-50"></div>
+            </div>
+          </div>
+          <div className="row">
+            {Object.entries(meals).map(([mealKey, meal], mealIndex) => {
+              if (mealKey === 'totalCaloriesPerDiem') return null;
+              return renderMealCard(
+                meal.Information,
+                meal.Nutrition,
+                meal.Ingredients,
+                meal.Information?.instructions,
+                dayIndex,
+                mealIndex
+              );
+            })}
           </div>
         </div>
-        <div className="row">
-          {Object.entries(meals).map(([mealKey, meal], mealIndex) => {
-            if (mealKey === 'totalCaloriesPerDiem') return null;
-            return renderMealCard(
-              meal.Information,
-              meal.Nutrition,
-              meal.Ingredients,
-              meal.Information?.instructions,
-              dayIndex,
-              mealIndex
-            );
-          })}
+      ));
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <div className="spinner-border text-warning" role="status">
+          <span className="visually-hidden">Loading...</span>
         </div>
       </div>
-    ));
-  };
+    );
+  }
+
+  if (!plan) {
+    return (
+      <div className="alert alert-warning m-4">
+        <i className="bi bi-exclamation-triangle me-2"></i>
+        Meal plan not found
+      </div>
+    );
+  }
 
   return (
     <div className="container-fluid py-5 px-4">
-      <div className="row justify-content-center mb-5">
+      <div className="row justify-content-center">
+        <div className="col-12 col-lg-10">
+          <div className="d-flex align-items-center justify-content-between mb-4">
+            <div>
+              <h3 className="display-6 fw-bold mb-1">
+                {plan.type === "day" ? "Daily" : "Weekly"} Meal Plan
+              </h3>
+              <p className="text-muted mb-0">
+                <i className="bi bi-calendar-event me-2"></i>
+                Created on {formatDateTime(plan.created_at)}
+              </p>
+            </div>
+            <button
+              className="btn btn-warning"
+              onClick={() => handleExportCalendar(planId, plan.type)}
+            >
+              <i className="bi bi-calendar-plus me-2"></i>
+              Export to Calendar
+            </button>
+          </div>
+          {renderCurrentPlan()}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Modify main MyMeals component
+const MyMeals = () => {
+  const [savedMealPlans, setSavedMealPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  //format date time
+  const formatDateTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    }).format(date);
+  };
+
+  
+
+  useEffect(() => {
+    const fetchMealPlans = async () => {
+      try {
+        const response = await axios.get('http://45.56.112.26:6969/user/meal_plans');
+        if (response.data.status === 'success') {
+          setSavedMealPlans(response.data.meal_plans);
+        }
+      } catch (error) {
+        console.error("Error fetching meal plans:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMealPlans();
+  }, []);
+
+  const MealPlansList = () => (
+    <div className="container-fluid py-5 px-4">
+      <div className="row justify-content-center">
         <div className="col-12 col-lg-10">
           <h2 className="display-6 fw-bold mb-4">My Saved Meal Plans</h2>
 
@@ -241,7 +370,7 @@ const MyMeals = () => {
               <div>You haven't saved any meal plans yet. Generate a meal plan to get started!</div>
             </div>
           ) : (
-            <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+            <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
               {savedMealPlans.map((plan) => (
                 <div className="col" key={plan.id}>
                   <div className="card h-100 border-0 shadow-sm hover-shadow-lg transition-all">
@@ -258,34 +387,40 @@ const MyMeals = () => {
                         <i className="bi bi-calendar-event me-2"></i>
                         {formatDateTime(plan.created_at)}
                       </p>
-                      <button
-                        className="btn btn-warning w-100"
-                        onClick={() => viewMealPlan(plan.id)}
-                      >
-                        <i className="bi bi-eye me-2"></i>
-                        View Plan
-                      </button>
+                      <div className="d-flex gap-2">
+                        <button
+                          className="btn btn-warning flex-grow-1"
+                          onClick={() => navigate(`/my-meals/${plan.id}`)}
+                        >
+                          <i className="bi bi-eye me-2"></i>
+                          View Plan
+                        </button>
+                        <button
+                          className="btn btn-outline-warning"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleExportCalendar(plan.id, plan.type);
+                          }}
+                        >
+                          <i className="bi bi-calendar-plus"></i>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           )}
-
-          {currentPlan && (
-            <div className="mt-5">
-              <div className="d-flex align-items-center mb-4">
-                <h3 className="display-6 fw-bold mb-0">
-                  {currentPlan.type === "day" ? "Daily" : "Weekly"} Meal Plan Details
-                </h3>
-                <div className="ms-3 flex-grow-1 border-bottom border-warning"></div>
-              </div>
-              {renderCurrentPlan()}
-            </div>
-          )}
         </div>
       </div>
     </div>
+  );
+
+  return (
+    <Routes>
+      <Route path="/" element={<MealPlansList />} />
+      <Route path="/:planId" element={<MealPlanView />} />
+    </Routes>
   );
 };
 

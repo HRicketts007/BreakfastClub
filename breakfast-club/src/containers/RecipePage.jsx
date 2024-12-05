@@ -5,8 +5,33 @@ import GroceryModal from "../components/GroceryModal";
 const RecipePage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { recipe, nutrition, instructions, ingredients, planId } = location.state || {};
+  const [recipeData, setRecipeData] = useState(location.state || null);
+  
+  useEffect(() => {
+    const fetchRecipeFromUrl = async () => {
+      // Check if we have URL parameters instead of state
+      const params = new URLSearchParams(location.search);
+      const recipeId = params.get('id');
+      
+      if (recipeId && !recipeData) {
+        try {
+          const response = await fetch(`http://45.56.112.26:6969/Get_Recipe/${recipeId}`);
+          if (!response.ok) throw new Error('Recipe not found');
+          const data = await response.json();
+          setRecipeData(data);
+        } catch (error) {
+          console.error('Failed to fetch recipe:', error);
+        }
+      }
+    };
+
+    fetchRecipeFromUrl();
+  }, [location, recipeData]);
+
+  // Update all state destructuring to use recipeData
+  const { recipe, nutrition, instructions, ingredients, planId } = recipeData || {};
   const [showGroceryModal, setShowGroceryModal] = useState(false);
+  const [showShareToast, setShowShareToast] = useState(false);
 
   const handleGroceryConfirm = (selectedIngredients) => {
     const existingItems = JSON.parse(localStorage.getItem('groceryList')) || [];
@@ -78,6 +103,18 @@ const RecipePage = () => {
     );
   }
 
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/recipe?id=${recipe.id}`;
+    
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShowShareToast(true);
+      setTimeout(() => setShowShareToast(false), 3000);
+    } catch (err) {
+      console.error('Failed to copy URL:', err);
+    }
+  };
+
   return (
 
     <>
@@ -98,9 +135,12 @@ const RecipePage = () => {
         </button>
         <div className="d-flex gap-2">
           <button className="btn btn-warning">
-            <i className="bi bi-download me-2"></i>Export
+            <i className="bi bi-star me-2"></i>Leave a Review
           </button>
-          <button className="btn btn-outline-warning">
+          <button 
+            className="btn btn-outline-warning" 
+            onClick={handleShare}
+          >
             <i className="bi bi-share me-2"></i>Share
           </button>
           <button className="btn btn-dark">
@@ -235,6 +275,24 @@ const RecipePage = () => {
       </div>
       
     </div>
+    {showShareToast && (
+      <div 
+        className="position-fixed bottom-0 end-0 p-3" 
+        style={{ zIndex: 11 }}
+      >
+        <div 
+          className="toast show bg-warning text-dark" 
+          role="alert" 
+          aria-live="assertive" 
+          aria-atomic="true"
+        >
+          <div className="toast-body d-flex align-items-center">
+            <i className="bi bi-check-circle-fill me-2"></i>
+            Link copied to clipboard!
+          </div>
+        </div>
+      </div>
+    )}
     </>
    
   );

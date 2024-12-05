@@ -35,6 +35,17 @@ const INTOLERANCE_OPTIONS = [
   { value: 'wheat', label: 'Wheat' }
 ];
 
+// Move daysOfWeek array to the top with other constants
+const daysOfWeek = [
+  'Monday', 
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday'
+];
+
 const MealPlanner = () => {
   const [caloricIntake, setCaloricIntake] = useState("");
   const [servings, setServings] = useState("");
@@ -377,95 +388,106 @@ const MealPlanner = () => {
           </div>
 
           {planType === "week" ? (
-            Object.entries(mealPlan).map(([day, meals], dayIndex) => (
-              <div key={dayIndex} className="col-12 mb-4">
-                <h4 className="mb-3">Day {dayIndex + 1}</h4>
-                <div className="row g-4">
-                  {Object.entries(meals).map(([mealKey, meal], mealIndex) => {
-                    const recipe = meal?.Information;
-                    const nutrition = meal?.Nutrition;
-                    const ingredients = meal?.Ingredients;
-                    const instructions = recipe?.instructions;
+            Object.entries(mealPlan)
+              .filter(([day]) => daysOfWeek.includes(day))
+              .sort((a, b) => daysOfWeek.indexOf(a[0]) - daysOfWeek.indexOf(b[0]))
+              .map(([day, meals], dayIndex) => {
+                return (
+                  <div key={dayIndex} className="col-12 mb-4">
+                    <div className="d-flex align-items-center gap-3 mb-4">
+                      <h4 className="mb-0 fw-bold text-warning">{day}</h4>
+                      <div className="flex-grow-1">
+                        <div className="border-bottom border-warning opacity-50"></div>
+                      </div>
+                    </div>
+                    <div className="row g-4">
+                      {Object.entries(meals).map(([mealKey, meal], mealIndex) => {
+                        if (mealKey === 'totalCaloriesPerDiem') return null;
+                        const recipe = meal?.Information;
+                        const nutrition = meal?.Nutrition;
+                        const ingredients = meal?.Ingredients;
+                        const instructions = recipe?.instructions;
 
-                    if (recipe) {
-                      const summary = formatData(recipe.summary);
-                      const isExpanded = expandedSummaries[`${dayIndex}-${mealIndex}`];
-                      const truncatedSummary = summary.slice(0, 100);
+                        if (recipe) {
+                          const summary = formatData(recipe.summary);
+                          const isExpanded = expandedSummaries[`${dayIndex}-${mealIndex}`];
+                          const truncatedSummary = summary.slice(0, 100);
 
-                      return (
-                        <div className="col-12 col-md-6 col-lg-4" key={mealIndex}>
-                          <div className="card h-100 border-0 shadow-sm hover-shadow-lg transition-all">
-                            <img
-                              src={recipe.image}
-                              className="card-img-top"
-                              style={{ height: "200px", objectFit: "cover" }}
-                              alt={recipe.title}
-                            />
+                          return (
+                            <div className="col-12 col-md-6 col-lg-4" key={mealIndex}>
+                              <div className="card h-100 border-0 shadow-sm hover-shadow-lg transition-all">
+                                <img
+                                  src={recipe.image}
+                                  className="card-img-top"
+                                  style={{ height: "200px", objectFit: "cover" }}
+                                  alt={recipe.title}
+                                />
 
-                            <div className="card-body d-flex flex-column gap-3">
-                              <h5 className="card-title fw-bold">{recipe.title}</h5>
+                                <div className="card-body d-flex flex-column gap-3">
+                                  <h5 className="card-title fw-bold">{recipe.title}</h5>
 
-                              <p className="card-text small text-muted">
-                                {isExpanded ? summary : `${truncatedSummary}...`}
-                                {summary.length > 100 && (
+                                  <p className="card-text small text-muted">
+                                    {isExpanded ? summary : `${truncatedSummary}...`}
+                                    {summary.length > 100 && (
+                                      <button
+                                        className="btn btn-link btn-sm p-0 ms-1"
+                                        onClick={() => toggleSummary(`${dayIndex}-${mealIndex}`)}
+                                      >
+                                        {isExpanded ? "Show Less" : "Show More"}
+                                      </button>
+                                    )}
+                                  </p>
+
+                                  <div className="d-flex justify-content-between text-muted small">
+                                    <span>
+                                      <i className="bi bi-people-fill me-1"></i>
+                                      {recipe.servings} servings
+                                    </span>
+                                    <span>
+                                      <i className="bi bi-clock-fill me-1"></i>
+                                      {recipe.readyInMinutes} min
+                                    </span>
+                                  </div>
+
+                                  <div className="bg-light rounded-3 p-3">
+                                    <div className="row row-cols-2 g-2 text-center">
+                                      <div className="col">
+                                        <div className="fw-bold text-warning mb-1">Calories</div>
+                                        <div className="small">{nutrition.calories}</div>
+                                      </div>
+                                      <div className="col">
+                                        <div className="fw-bold text-warning mb-1">Protein</div>
+                                        <div className="small">{nutrition.protein}</div>
+                                      </div>
+                                      <div className="col">
+                                        <div className="fw-bold text-warning mb-1">Fat</div>
+                                        <div className="small">{nutrition.fat}</div>
+                                      </div>
+                                      <div className="col">
+                                        <div className="fw-bold text-warning mb-1">Carbs</div>
+                                        <div className="small">{nutrition.carbs}</div>
+                                      </div>
+                                    </div>
+                                  </div>
+
                                   <button
-                                    className="btn btn-link btn-sm p-0 ms-1"
-                                    onClick={() => toggleSummary(`${dayIndex}-${mealIndex}`)}
+                                    className="btn btn-warning mt-auto w-100"
+                                    onClick={() => viewRecipe(recipe, nutrition, instructions, ingredients, recipe.id)}
                                   >
-                                    {isExpanded ? "Show Less" : "Show More"}
+                                    View Recipe
+                                    <i className="bi bi-arrow-right-circle ms-2"></i>
                                   </button>
-                                )}
-                              </p>
-
-                              <div className="d-flex justify-content-between text-muted small">
-                                <span>
-                                  <i className="bi bi-people-fill me-1"></i>
-                                  {recipe.servings} servings
-                                </span>
-                                <span>
-                                  <i className="bi bi-clock-fill me-1"></i>
-                                  {recipe.readyInMinutes} min
-                                </span>
-                              </div>
-
-                              <div className="bg-light rounded-3 p-3">
-                                <div className="row row-cols-2 g-2 text-center">
-                                  <div className="col">
-                                    <div className="fw-bold text-warning mb-1">Calories</div>
-                                    <div className="small">{nutrition.calories}</div>
-                                  </div>
-                                  <div className="col">
-                                    <div className="fw-bold text-warning mb-1">Protein</div>
-                                    <div className="small">{nutrition.protein}</div>
-                                  </div>
-                                  <div className="col">
-                                    <div className="fw-bold text-warning mb-1">Fat</div>
-                                    <div className="small">{nutrition.fat}</div>
-                                  </div>
-                                  <div className="col">
-                                    <div className="fw-bold text-warning mb-1">Carbs</div>
-                                    <div className="small">{nutrition.carbs}</div>
-                                  </div>
                                 </div>
                               </div>
-
-                              <button
-                                className="btn btn-warning mt-auto w-100"
-                                onClick={() => viewRecipe(recipe, nutrition, instructions, ingredients, recipe.id)}
-                              >
-                                View Recipe
-                                <i className="bi bi-arrow-right-circle ms-2"></i>
-                              </button>
                             </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })}
-                </div>
-              </div>
-            ))
+                          );
+                        }
+                        return null;
+                      })}
+                    </div>
+                  </div>
+                );
+              })
           ) : (
             Object.keys(mealPlan).map((key, index) => {
               const recipe = mealPlan[key]?.Information;
