@@ -687,6 +687,57 @@ def update_grocery_items():
             "status": "error"
         }), 500
 
+@app.route('create_rating', methods=['POST'])
+@login_required
+def create_rating():
+    try:
+        data = request.get_json()
+        user_id = request.user['uid']
+        recipe_id = data.get('recipe_id')
+        taste_rating = data.get('taste_rating')
+        easiness_rating = data.get('easiness_rating')
+        cost_rating =data.get('cost_rating')
+
+        # Save rating to Firestore
+        db.collection('ratings').add({
+            'user_id': user_id,
+            'recipe_id': recipe_id,
+            'taste_rating': taste_rating,
+            'easiness_rating': easiness_rating,
+            'cost_rating': cost_rating,
+            'created_at': firestore.SERVER_TIMESTAMP
+        })
+
+        return jsonify({
+            "status": "success",
+            "message": "Rating added successfully"
+        }), 201
+    except Exception as e:
+        return jsonify({
+            "error": str(e),
+            "status": "error"
+        }), 500
+
+@app.route('/get_ratings/<recipe_id>', methods=['GET'])
+def get_ratings(recipe_id):
+    try:
+        ratings = db.collection('ratings').where('recipe_id', '==', recipe_id).stream()
+        ratings_list = []
+        for rating in ratings:
+            rating_data = rating.to_dict()
+            rating_data['id'] = rating.id
+            ratings_list.append(rating_data)
+
+        return jsonify({
+            "ratings": ratings_list,
+            "status": "success"
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "error": str(e),
+            "status": "error"
+        }), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6969)
