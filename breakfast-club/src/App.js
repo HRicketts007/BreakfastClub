@@ -34,9 +34,10 @@ function App() {
             element={auth ? <RecipePage /> : <Navigate to="/login" />}
           />
            <Route
-            path="/my-meals"
+            path="/my-meals/*"
             element={auth ? <MyMeals /> : <Navigate to="/login" />}
           />
+          <Route path="/recipe/:recipeId" element={ <RecipePage /> } />
            <Route
             path="/grocery-list"
             element={auth ? <GroceryList /> : <Navigate to="/login" />}
