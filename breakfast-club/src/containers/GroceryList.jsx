@@ -8,10 +8,12 @@ const GroceryList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  //get grocery list
   useEffect(() => {
     fetchGroceryItems();
   }, []);
 
+  //get grocery list func
   const fetchGroceryItems = async () => {
     try {
       const token = await getIdToken();
@@ -29,6 +31,7 @@ const GroceryList = () => {
     }
   };
 
+  //update grocery list func
   const updateGroceryItems = async (items) => {
     try {
       const token = await getIdToken();
@@ -42,26 +45,33 @@ const GroceryList = () => {
     }
   };
 
-  const toggleItem = (index) => {
+  //checkbox func
+  const toggleItem = (item) => {
     setCheckedItems(prev => ({
       ...prev,
-      [index]: !prev[index]
+      [item]: !prev[item]
     }));
   };
 
-  const removeItem = async (index) => {
-    const updatedItems = groceryItems.filter((_, i) => i !== index);
+  //remove func
+  const removeItem = async (item) => {
+    const updatedItems = groceryItems.filter(i => i !== item);
     setGroceryItems(updatedItems);
+    const newCheckedItems = { ...checkedItems };
+    delete newCheckedItems[item];
+    setCheckedItems(newCheckedItems);
     await updateGroceryItems(updatedItems);
   };
 
+  //clear checked
   const clearCheckedItems = async () => {
-    const remainingItems = groceryItems.filter((_, index) => !checkedItems[index]);
+    const remainingItems = groceryItems.filter(item => !checkedItems[item]);
     setGroceryItems(remainingItems);
     setCheckedItems({});
     await updateGroceryItems(remainingItems);
   };
 
+  //clear all
   const clearAllItems = async () => {
     setGroceryItems([]);
     setCheckedItems({});
@@ -119,20 +129,20 @@ const GroceryList = () => {
       ) : (
         <div className="card border-0 shadow-sm">
           <div className="list-group list-group-flush">
-            {groceryItems.map((item, index) => (
-              <div key={index} className="list-group-item d-flex align-items-center">
+            {groceryItems.map((item) => (
+              <div key={item} className="list-group-item d-flex align-items-center">
                 <div className="form-check flex-grow-1">
                   <input
                     type="checkbox"
                     className="form-check-input"
-                    checked={checkedItems[index] || false}
-                    onChange={() => toggleItem(index)}
+                    checked={checkedItems[item] || false}
+                    onChange={() => toggleItem(item)}
                   />
                   <label 
                     className="form-check-label ms-2"
                     style={{ 
-                      textDecoration: checkedItems[index] ? 'line-through' : 'none',
-                      color: checkedItems[index] ? '#6c757d' : 'inherit'
+                      textDecoration: checkedItems[item] ? 'line-through' : 'none',
+                      color: checkedItems[item] ? '#6c757d' : 'inherit'
                     }}
                   >
                     {item}
@@ -140,7 +150,7 @@ const GroceryList = () => {
                 </div>
                 <button 
                   className="btn btn-link text-danger"
-                  onClick={() => removeItem(index)}
+                  onClick={() => removeItem(item)}
                 >
                   <i className="bi bi-trash"></i>
                 </button>

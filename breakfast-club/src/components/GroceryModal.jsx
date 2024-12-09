@@ -2,41 +2,6 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { getIdToken } from '../utils/auth';
 
-// Add a request interceptor
-axios.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Add a response interceptor
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Clear token and redirect to login
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-
-export const isAuthenticated = () => {
-  return !!localStorage.getItem('token');
-};
-
-export const logout = () => {
-  localStorage.removeItem('token');
-  localStorage.setItem('isAuthenticated', 'false');
-};
 
 const GroceryModal = ({ show, onHide, ingredients = [], onConfirm }) => {
   const [selectedIngredients, setSelectedIngredients] = useState(ingredients || []);
@@ -44,23 +9,26 @@ const GroceryModal = ({ show, onHide, ingredients = [], onConfirm }) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState(null);
 
+  //add items to grocery list func
   const handleConfirm = async () => {
     setIsLoading(true);
     setError(null);
+    
     try {
+      //get token
       const token = await getIdToken();
+      //get user grocery list
       const response = await axios.get('http://45.56.112.26:6969/grocery/items', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
       const existingItems = response.data.status === 'success' ? response.data.items : [];
+      //update items
       const updatedItems = [...existingItems, ...selectedIngredients];
-      
       await axios.post('http://45.56.112.26:6969/grocery/items',
         { items: updatedItems },
         { headers: { Authorization: `Bearer ${token}` }}
       );
-      
+      //success
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
@@ -75,6 +43,7 @@ const GroceryModal = ({ show, onHide, ingredients = [], onConfirm }) => {
     }
   };
 
+  //handle checkbox for ingredients
   const toggleIngredient = (index) => {
     if (!ingredients || !ingredients.length) return;
     
@@ -92,7 +61,8 @@ const GroceryModal = ({ show, onHide, ingredients = [], onConfirm }) => {
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">Add to Grocery List</h5>
-            <button type="button" className="btn-close" onClick={onHide}></button>
+            <button type="button" className="btn-close"                   data-bs-dismiss="modal"
+            ></button>
           </div>
           
           <div className="modal-body">
@@ -136,7 +106,7 @@ const GroceryModal = ({ show, onHide, ingredients = [], onConfirm }) => {
                 <button 
                   type="button" 
                   className="btn btn-secondary" 
-                  onClick={onHide}
+                  data-bs-dismiss="modal"
                 >
                   Cancel
                 </button>
