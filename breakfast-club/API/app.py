@@ -129,6 +129,11 @@ def get_recipes(ID):
     base_url = "https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes"
     Info = make_api_request(f"{base_url}/{ID}/information")
     return {"recipe": Info}
+    
+def get_nutrition(ID):
+    base_url = "https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes"
+    Nutrition = make_api_request(f"{base_url}/{ID}/nutritionWidget.json")
+    return {"nutrition": Nutrition}
 
 def get_meal_plan(plan_id):
     """Retrieve a meal plan from Firestore"""
@@ -633,18 +638,20 @@ def get_meal_plan_ingredients(plan_id):
         }), 500
 
 @app.route('/get_recipe/<recipe_id>', methods=['GET','POST'])
-@login_required
 def get_recipe(recipe_id):
     try:
         recipe = get_recipes(recipe_id)
+        nutrition = get_nutrition(recipe_id)
+
         if recipe is not None:
             return jsonify({
-                "id":recipe_id,
+                "id": recipe_id,
                 "recipe": recipe,
+                "nutrition": nutrition,
                 "status": "success"
             }), 200
         return jsonify({
-            "message": "Recipe not available, dum dum",
+            "message": "Recipe not found",
             "status": "error"
         }), 404
     except Exception as e:
@@ -652,7 +659,7 @@ def get_recipe(recipe_id):
             "error": str(e),
             "status": "error"
         }), 500
-
+    
 @app.route('/grocery/items', methods=['GET','POST'])
 @login_required
 def get_user_grocery_items():
