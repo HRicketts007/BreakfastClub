@@ -9,6 +9,7 @@ import Nav from "./components/Nav";
 import MyMeals from "./containers/MyMeals";
 import GroceryList from "./containers/GroceryList";
 import { isAuthenticated } from './utils/auth';
+import OutfacingRecipePage from "./containers/OutfacingRecipePage";
 
 function App() {
   const [auth, setAuth] = useState(() => isAuthenticated());
@@ -33,6 +34,7 @@ function App() {
             path="/recipe"
             element={auth ? <RecipePage /> : <Navigate to="/login" />}
           />
+          <Route path="/shared-recipe" element={<OutfacingRecipePage />} />
            <Route
             path="/my-meals/*"
             element={auth ? <MyMeals /> : <Navigate to="/login" />}

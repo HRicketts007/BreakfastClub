@@ -15,7 +15,7 @@ const RecipePage = () => {
       
       if (recipeId && !recipeData) {
         try {
-          const response = await fetch(`http://45.56.112.26:6969/Get_Recipe/${recipeId}`);
+          const response = await fetch(`http://45.155.185.100:6969/get_recipe/${recipeId}`);
           if (!response.ok) throw new Error('Recipe not found');
           const data = await response.json();
           setRecipeData(data);
@@ -104,7 +104,7 @@ const RecipePage = () => {
   }
 
   const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/recipe?id=${recipe.id}`;
+    const shareUrl = `${window.location.origin}/shared-recipe?id=${recipe.id}`;
     
     try {
       await navigator.clipboard.writeText(shareUrl);
