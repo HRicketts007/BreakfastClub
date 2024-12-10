@@ -2,11 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import GroceryModal from "../components/GroceryModal";
 import RatingModal from '../components/RatingModal';
-<<<<<<< HEAD
-import axios from 'axios';
-import { getIdToken } from '../utils/auth';
-=======
->>>>>>> 91b17d1b158c1520fd8541d7e4ac947af640a8d5
 
 const RecipePage = () => {
   const location = useLocation();
@@ -16,10 +11,6 @@ const RecipePage = () => {
   const [ratings, setRatings] = useState([]);
   const [showGroceryModal, setShowGroceryModal] = useState(false);
   const [showShareToast, setShowShareToast] = useState(false);
-<<<<<<< HEAD
-  const [isFavorited, setIsFavorited] = useState(false);
-=======
->>>>>>> 91b17d1b158c1520fd8541d7e4ac947af640a8d5
 
   useEffect(() => {
     const fetchRecipeFromUrl = async () => {
@@ -28,11 +19,7 @@ const RecipePage = () => {
       
       if (recipeId && !recipeData) {
         try {
-<<<<<<< HEAD
-            const response = await fetch(`http://localhost:6969/get_recipe/${recipeId}`);
-=======
           const response = await fetch(`http://45.56.112.26:6969/get_recipe/${recipeId}`);
->>>>>>> 91b17d1b158c1520fd8541d7e4ac947af640a8d5
           if (!response.ok) throw new Error('Recipe not found');
           const data = await response.json();
           setRecipeData(data);
@@ -47,8 +34,6 @@ const RecipePage = () => {
 
   // Update all state destructuring to use recipeData
   const { recipe, nutrition, instructions, ingredients, planId } = recipeData || {};
-<<<<<<< HEAD
-=======
 
   useEffect(() => {
     if (recipe?.id) {
@@ -75,77 +60,14 @@ const RecipePage = () => {
       console.error('Error fetching ratings:', error);
     }
   };
->>>>>>> 91b17d1b158c1520fd8541d7e4ac947af640a8d5
 
-  useEffect(() => {
-    if (recipe?.id) {
-      handleRatingSubmit();
-    }
-  }, [recipe?.id]);
-
-  useEffect(() => {
-    const checkIfFavorited = async () => {
-      if (recipe?.id) {
-        try {
-          const token = await getIdToken();
-          const response = await axios.get('http://localhost:6969/favorites', {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          
-          if (response.data.status === 'success') {
-            const favorites = response.data.favorites || [];
-            setIsFavorited(favorites.includes(parseInt(recipe.id)));
-          }
-        } catch (error) {
-          console.error('Error checking favorite status:', error);
-        }
-      }
-    };
-
-    checkIfFavorited();
-  }, [recipe?.id]);
-
-  const handleRatingSubmit = async () => {
-    if (!recipe?.id) return;
-    
-    try {
-      const response = await fetch(`http://localhost:6969/get_ratings/${recipe.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setRatings(Array.isArray(data) ? data : data.ratings || []);
-      } else {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-      }
-    } catch (error) {
-      console.error('Error fetching ratings:', error);
-    }
+  const handleGroceryConfirm = (selectedIngredients) => {
+    const existingItems = JSON.parse(localStorage.getItem('groceryList')) || [];
+    const updatedItems = [...existingItems, ...selectedIngredients];
+    localStorage.setItem('groceryList', JSON.stringify(updatedItems));
+    setShowGroceryModal(false);
   };
 
-<<<<<<< HEAD
-  const handleGroceryConfirm = async (selectedIngredients) => {
-    try {
-      const token = await getIdToken();
-      const response = await axios.get('http://localhost:6969/grocery/items', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const existingItems = response.data.items || [];
-      const updatedItems = [...new Set([...existingItems, ...selectedIngredients])];
-      
-      await axios.post(
-        'http://localhost:6969/grocery/items',
-        { items: updatedItems },
-        { headers: { Authorization: `Bearer ${token}` }}
-      );
-      
-      setShowGroceryModal(false);
-    } catch (error) {
-      console.error('Error updating grocery list:', error);
-    }
-  };
-
-=======
->>>>>>> 91b17d1b158c1520fd8541d7e4ac947af640a8d5
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}/shared-recipe?id=${recipe?.id}`;
     try {
@@ -156,27 +78,6 @@ const RecipePage = () => {
       console.error('Failed to copy URL:', err);
     }
   };
-<<<<<<< HEAD
-
-  const handleFavoriteClick = async () => {
-    try {
-      const token = await getIdToken();
-      if (isFavorited) {
-        await axios.delete(`http://localhost:6969/favorites/${recipe.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      } else {
-        await axios.post(`http://localhost:6969/favorites/${recipe.id}`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      }
-      setIsFavorited(!isFavorited);
-    } catch (error) {
-      console.error('Error updating favorite status:', error);
-    }
-  };
-=======
->>>>>>> 91b17d1b158c1520fd8541d7e4ac947af640a8d5
 
   const formatInstructions = (htmlContent) => {
     if (!htmlContent) return [];
@@ -230,7 +131,10 @@ const RecipePage = () => {
   return (
     <>
      <GroceryModal
-      ingredients={ingredients}
+      show={showGroceryModal}
+      onHide={() => setShowGroceryModal(false)}
+      ingredients={ingredients || []}
+      planId={planId}
       onConfirm={handleGroceryConfirm}
     />
     <div className="container bg-white rounded-4 p-4 shadow-lg">
@@ -239,7 +143,7 @@ const RecipePage = () => {
           className="btn btn-outline-secondary"
           onClick={() => navigate(-1)}
         >
-          &larr; Back
+          &larr; Back to Meal Plan
         </button>
         <div className="d-flex gap-2">
           <button 
@@ -255,13 +159,8 @@ const RecipePage = () => {
           >
             <i className="bi bi-share me-2"></i>Share
           </button>
-          <button 
-            className={`btn ${isFavorited ? 'btn-warning' : 'btn-outline-warning'}`}
-            onClick={handleFavoriteClick}
-          >
-            <i className={`bi ${isFavorited ? 'bi-heart-fill' : 'bi-heart'}`}></i>
-            {' '}
-            {isFavorited ? 'Unfavorite' : 'Favorite'}
+          <button className="btn btn-dark">
+            <i className="bi bi-heart me-2"></i>Favorite
           </button>
         </div>
       </div>
@@ -351,12 +250,7 @@ const RecipePage = () => {
           <h5 className="fw-bold mb-">Ingredients</h5>
           <button 
             className="btn btn-warning" 
-<<<<<<< HEAD
-            data-bs-toggle="modal"
-            data-bs-target="#groceryModal"
-=======
             onClick={() => setShowGroceryModal(true)}
->>>>>>> 91b17d1b158c1520fd8541d7e4ac947af640a8d5
           >
             Add to Grocery List
           </button>
@@ -470,3 +364,4 @@ const RecipePage = () => {
 };
 
 export default RecipePage;
+

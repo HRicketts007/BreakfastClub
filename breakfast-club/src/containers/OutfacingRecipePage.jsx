@@ -58,20 +58,12 @@ const OutfacingRecipePage = () => {
 
       try {
         // Fetch recipe data
-<<<<<<< HEAD
-        const recipeResponse = await fetch(`http://localhost:6969/get_recipe/${recipeId}`);
-=======
         const recipeResponse = await fetch(`http://45.56.112.26:6969/get_recipe/${recipeId}`);
->>>>>>> 91b17d1b158c1520fd8541d7e4ac947af640a8d5
         if (!recipeResponse.ok) throw new Error('Recipe not found');
         const recipeData = await recipeResponse.json();
         
         // Fetch ratings
-<<<<<<< HEAD
-        const ratingsResponse = await fetch(`http://localhost:6969/get_ratings/${recipeId}`);
-=======
         const ratingsResponse = await fetch(`http://45.56.112.26:6969/get_ratings/${recipeId}`);
->>>>>>> 91b17d1b158c1520fd8541d7e4ac947af640a8d5
         if (ratingsResponse.ok) {
           const ratingsData = await ratingsResponse.json();
           setRatings(ratingsData.ratings);
@@ -116,11 +108,7 @@ const OutfacingRecipePage = () => {
 
   const handleRatingSubmit = async () => {
     try {
-<<<<<<< HEAD
-        const response = await fetch(`http://localhost:6969/get_ratings/${recipe?.id}`);
-=======
         const response = await fetch(`http://45.56.112.26:6969/get_ratings/${recipe?.id}`);
->>>>>>> 91b17d1b158c1520fd8541d7e4ac947af640a8d5
       if (response.ok) {
         const data = await response.json();
         setRatings(data.ratings);

@@ -9,11 +9,7 @@ const RatingModal = ({ recipeId, onRatingSubmit }) => {
     e.preventDefault();
     try {
       console.log('Submitting rating:', { recipeId, rating, review });
-<<<<<<< HEAD
-      const response = await fetch('http://localhost:6969/create_rating', {
-=======
       const response = await fetch('http://45.56.112.26:6969/create_rating', {
->>>>>>> 91b17d1b158c1520fd8541d7e4ac947af640a8d5
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
