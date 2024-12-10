@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import RatingModal from "../components/RatingModal";
 
 const OutfacingRecipePage = () => {
   const [recipeData, setRecipeData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [ratings, setRatings] = useState([]);
   const location = useLocation();
+
+  // Destructure after useEffect to avoid the initialization error
+  const { recipe, nutrition } = recipeData || {};
 
   const formatInstructions = (htmlContent) => {
     if (!htmlContent) return [];
@@ -38,10 +43,10 @@ const OutfacingRecipePage = () => {
 
     return sentences;
   };
+  const instructionSteps = recipe?.instructions ? formatInstructions(recipe.instructions) : [];
 
   useEffect(() => {
     const fetchRecipeFromUrl = async () => {
-      console.log("fetching recipe from url");
       const params = new URLSearchParams(location.search);
       const recipeId = params.get('id');
       
@@ -52,25 +57,24 @@ const OutfacingRecipePage = () => {
       }
 
       try {
-        // Single API call to get both recipe and nutrition data
-        const response = await fetch(`http://45.155.185.100:6969/get_recipe/${recipeId}`);
-        if (!response.ok) throw new Error('Recipe not found');
-        const data = await response.json();
-        console.log("API Response:", data);
+        // Fetch recipe data
+        const recipeResponse = await fetch(`http://45.56.112.26:6969/get_recipe/${recipeId}`);
+        if (!recipeResponse.ok) throw new Error('Recipe not found');
+        const recipeData = await recipeResponse.json();
+        
+        // Fetch ratings
+        const ratingsResponse = await fetch(`http://45.56.112.26:6969/get_ratings/${recipeId}`);
+        if (ratingsResponse.ok) {
+          const ratingsData = await ratingsResponse.json();
+          setRatings(ratingsData.ratings);
+        }
 
         setRecipeData({
-          recipe: data.recipe.recipe,
-          nutrition: data.nutrition,
-          instructions: data.recipe.instructions
-        });
-        
-        console.log("Recipe Data Set:", {
-          recipe: data.recipe.recipe,
-          nutrition: data.nutrition,
-          instructions: data.recipe.instructions
+          recipe: recipeData.recipe.recipe,
+          nutrition: recipeData.nutrition,
+          instructions: recipeData.recipe.instructions
         });
       } catch (error) {
-        console.error('Failed to fetch recipe:', error);
         setError(error.message);
       } finally {
         setLoading(false);
@@ -80,14 +84,11 @@ const OutfacingRecipePage = () => {
     fetchRecipeFromUrl();
   }, [location]);
 
-
   if (loading) {
     return (
-      <div className="container bg-white rounded-4 p-4 shadow-lg">
-        <div className="text-center">
-          <div className="spinner-border text-warning" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
+      <div className="container mt-5 text-center">
+        <div className="spinner-border text-warning" role="status">
+          <span className="visually-hidden">Loading...</span>
         </div>
       </div>
     );
@@ -95,19 +96,29 @@ const OutfacingRecipePage = () => {
 
   if (error) {
     return (
-      <div className="container bg-white rounded-4 p-4 shadow-lg">
-        <div className="text-center">
-          <h3 className="text-danger">Error</h3>
-          <p>{error}</p>
-          <p>The recipe you're looking for might not exist or there was an error loading it.</p>
+      <div className="container mt-5">
+        <div className="alert alert-danger" role="alert">
+          {error}
         </div>
       </div>
     );
   }
 
-  const { recipe, nutrition, instructions } = recipeData || {};
-  console.log("Recipe Data:", recipeData);
-  const instructionSteps = formatInstructions(recipe.instructions);
+
+
+  const handleRatingSubmit = async () => {
+    try {
+        const response = await fetch(`http://45.56.112.26:6969/get_ratings/${recipe?.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setRatings(data.ratings);
+      }
+    } catch (error) {
+      console.error('Error fetching ratings:', error);
+    }
+  };
+
+
 
   return (
     <div className="container bg-white rounded-4 p-4 shadow-lg">
@@ -149,19 +160,19 @@ const OutfacingRecipePage = () => {
                   <div className="col-6">
                     <div className="p-3 bg-light rounded-3">
                       <p className="mb-1"><strong>Calories</strong></p>
-                      <p className="mb-0 fs-5">{nutrition.nutrition.calories} kcal</p>
+                      <p className="mb-0 fs-5">{nutrition?.nutrition?.calories} kcal</p>
                     </div>
                   </div>
                   <div className="col-6">
                     <div className="p-3 bg-light rounded-3">
                       <p className="mb-1"><strong>Protein</strong></p>
-                      <p className="mb-0 fs-5">{nutrition.nutrition.protein} g</p>
+                      <p className="mb-0 fs-5">{nutrition?.nutrition?.protein} g</p>
                     </div>
                   </div>
                   <div className="col-6">
                     <div className="p-3 bg-light rounded-3">
                       <p className="mb-1"><strong>Fat</strong></p>
-                      <p className="mb-0 fs-5">{nutrition.nutrition.fat} g</p>
+                      <p className="mb-0 fs-5">{nutrition?.nutrition?.fat} g</p>
                     </div>
                   </div>
                   <div className="col-6">
@@ -224,6 +235,50 @@ const OutfacingRecipePage = () => {
           )}
         </div>
       </div>
+
+<div className="card border-0 shadow-sm mt-4">
+  <div className="card-header bg-warning bg-opacity-10 border-0 d-flex justify-content-between align-items-center">
+    <h5 className="fw-bold mb-0">Reviews</h5>
+    <span className="badge bg-warning text-dark">
+      {ratings.length} {ratings.length === 1 ? 'Review' : 'Reviews'}
+    </span>
+  </div>
+  <div className="card-body">
+    {ratings.length > 0 ? (
+      <div className="d-flex flex-column gap-3">
+        {ratings.map((rating) => (
+          <div key={rating.id} className="card border-0 bg-light">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <div className="d-flex gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <i
+                      key={i}
+                      className={`bi bi-star${i < rating.rating ? '-fill' : ''} text-warning`}
+                    />
+                  ))}
+                </div>
+                <small className="text-muted">
+                {rating.created_at ? (
+                    typeof rating.created_at === 'string' 
+                      ? new Date(rating.created_at).toLocaleDateString()
+                      : new Date(rating.created_at).toLocaleDateString()
+                  ) : 'Date not available'}         
+                </small>
+              </div>
+              {rating.review && (
+                <p className="mb-0 text-break">{rating.review}</p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <p className="text-muted text-center mb-0">No reviews yet.</p>
+    )}
+  </div>
+</div>
+
     </div>
   );
 };
