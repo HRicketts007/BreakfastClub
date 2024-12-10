@@ -71,7 +71,7 @@ const MealPlanner = () => {
   useEffect(() => {
     const fetchLastMealPlan = async () => {
       try {
-        const response = await axios.get('http://45.56.112.26:6969/user/meal_plans');
+        const response = await axios.get('http://localhost:6969/user/meal_plans');
         if (response.data.meal_plans?.length > 0) {
           const lastPlan = response.data.meal_plans[0];
           setMealPlan(lastPlan.plan);
@@ -146,7 +146,7 @@ const MealPlanner = () => {
       // console.log('Generating meal plan with params:', params);
 
       //generate request
-      const response = await axios.get(`http://45.56.112.26:6969${endpoint}`, {
+      const response = await axios.get(`http://localhost:6969${endpoint}`, {
         params,
 
         headers: {

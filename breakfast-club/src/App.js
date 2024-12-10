@@ -10,6 +10,7 @@ import MyMeals from "./containers/MyMeals";
 import GroceryList from "./containers/GroceryList";
 import { isAuthenticated } from './utils/auth';
 import OutfacingRecipePage from "./containers/OutfacingRecipePage";
+import FavoriteRecipes from "./containers/FavoriteRecipes";
 
 function App() {
   const [auth, setAuth] = useState(() => isAuthenticated());
@@ -43,6 +44,10 @@ function App() {
            <Route
             path="/grocery-list"
             element={auth ? <GroceryList /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/favorites"
+            element={auth ? <FavoriteRecipes /> : <Navigate to="/login" />}
           />
           <Route path="/" element={<Navigate to="/meal-planner" />} />
         </Routes>

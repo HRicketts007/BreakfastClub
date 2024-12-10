@@ -74,6 +74,14 @@ const Nav = ({ auth, setAuth }) => {
                  Grocery List
                </Link>
             </li>
+            <li className="nav-item">
+              <Link 
+                className={`hover text-decoration-none text-dark ${location.pathname === '/favorites' ? 'fw-bold ' : ''}`} 
+                to="/favorites"
+              >
+                Favorite Recipes
+              </Link>
+            </li>
             <li class="nav-item">
                <Link className="btn btn-dark hover text-decoration-none text-light" to="/meal-planner" onClick={openGenerate} >Create +</Link>
             </li>
