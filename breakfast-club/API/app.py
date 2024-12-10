@@ -14,7 +14,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Initialize Firebase Admin
-cred = credentials.Certificate("/root/firebase-credentials.json")
+cred = credentials.Certificate("./firebase-credentials.json")
 firebase_app = initialize_app(cred)
 db = firestore.client()
 FIREBASE_WEB_API_KEY = "AIzaSyA2M0xP2WEsmlf4aJPzcxJAWc90JUqApWQ"
@@ -660,39 +660,38 @@ def get_recipe(recipe_id):
             "status": "error"
         }), 500
     
-@app.route('/grocery/items', methods=['GET','POST'])
+@app.route('/grocery/items', methods=['GET', 'POST'])
 @login_required
-def get_user_grocery_items():
-    try:
-        user_id = request.user['uid']
-        items = get_grocery_items(user_id)
-        return jsonify({
-            "items": items,
-            "status": "success"
-        }), 200
-    except Exception as e:
-        return jsonify({
-            "error": str(e),
-            "status": "error"
-        }), 500
-
-@app.route('/grocery/items', methods=['GET','POST'])
-@login_required
-def update_grocery_items():
-    try:
-        user_id = request.user['uid']
-        data = request.get_json()
-        items = data.get('items', [])
-        save_grocery_items(user_id, items)
-        return jsonify({
-            "status": "success",
-            "message": "Grocery list updated successfully"
-        }), 200
-    except Exception as e:
-        return jsonify({
-            "error": str(e),
-            "status": "error"
-        }), 500
+def handle_grocery_items():
+    user_id = request.user['uid']
+    
+    if request.method == 'GET':
+        try:
+            items = get_grocery_items(user_id)
+            return jsonify({
+                "items": items,
+                "status": "success"
+            }), 200
+        except Exception as e:
+            return jsonify({
+                "error": str(e),
+                "status": "error"
+            }), 500
+            
+    elif request.method == 'POST':
+        try:
+            data = request.get_json()
+            items = data.get('items', [])
+            save_grocery_items(user_id, items)
+            return jsonify({
+                "status": "success",
+                "message": "Grocery list updated successfully"
+            }), 200
+        except Exception as e:
+            return jsonify({
+                "error": str(e),
+                "status": "error"
+            }), 500
 
 @app.route('/create_rating', methods=['POST'])
 @login_required
@@ -754,6 +753,76 @@ def get_ratings(recipe_id):
             "status": "error"
         }), 500
 
+def get_user_favorites(user_id):
+    """Get user's favorite recipes from Firestore"""
+    doc_ref = db.collection('users').document(user_id)
+    doc = doc_ref.get()
+    if doc.exists:
+        data = doc.to_dict()
+        return data.get('favorites', [])
+    return []
+
+def update_user_favorites(user_id, recipe_id, action):
+    """Update user's favorite recipes in Firestore"""
+    doc_ref = db.collection('users').document(user_id)
+    doc = doc_ref.get()
+    
+    if doc.exists:
+        current_favorites = doc.to_dict().get('favorites', [])
+        
+        if action == 'add' and recipe_id not in current_favorites:
+            current_favorites.append(recipe_id)
+        elif action == 'remove' and recipe_id in current_favorites:
+            current_favorites.remove(recipe_id)
+            
+        doc_ref.update({
+            'favorites': current_favorites
+        })
+        return True
+    return False
+
+@app.route('/favorites', methods=['GET'])
+@login_required
+def get_favorites():
+    try:
+        user_id = request.user['uid']
+        favorites = get_user_favorites(user_id)
+        return jsonify({
+            "favorites": favorites,
+            "status": "success"
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "error": str(e),
+            "status": "error"
+        }), 500
+
+@app.route('/favorites/<recipe_id>', methods=['POST', 'DELETE'])
+@login_required
+def handle_favorite(recipe_id):
+    try:
+        user_id = request.user['uid']
+        action = 'add' if request.method == 'POST' else 'remove'
+        
+        success = update_user_favorites(user_id, int(recipe_id), action)
+        
+        if success:
+            return jsonify({
+                "status": "success",
+                "message": f"Recipe {'added to' if action == 'add' else 'removed from'} favorites"
+            }), 200
+        else:
+            return jsonify({
+                "status": "error",
+                "message": "Failed to update favorites"
+            }), 400
+            
+    except Exception as e:
+        print(f"Error in handle_favorite: {str(e)}")
+        return jsonify({
+            "error": str(e),
+            "status": "error"
+        }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6969)
