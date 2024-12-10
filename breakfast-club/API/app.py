@@ -694,24 +694,22 @@ def update_grocery_items():
             "status": "error"
         }), 500
 
-@app.route('create_rating', methods=['POST'])
+@app.route('/create_rating', methods=['POST'])
 @login_required
 def create_rating():
     try:
         data = request.get_json()
         user_id = request.user['uid']
         recipe_id = data.get('recipe_id')
-        taste_rating = data.get('taste_rating')
-        easiness_rating = data.get('easiness_rating')
-        cost_rating =data.get('cost_rating')
+        rating = data.get('rating')
+        review = data.get('review')
 
         # Save rating to Firestore
         db.collection('ratings').add({
             'user_id': user_id,
             'recipe_id': recipe_id,
-            'taste_rating': taste_rating,
-            'easiness_rating': easiness_rating,
-            'cost_rating': cost_rating,
+            'rating': rating,
+            'review': review,
             'created_at': firestore.SERVER_TIMESTAMP
         })
 
@@ -728,18 +726,29 @@ def create_rating():
 @app.route('/get_ratings/<recipe_id>', methods=['GET'])
 def get_ratings(recipe_id):
     try:
-        ratings = db.collection('ratings').where('recipe_id', '==', recipe_id).stream()
+        # Convert recipe_id to integer to match Firestore data type
+        recipe_id = int(recipe_id)  # Changed from str() to int()
+        
+        # Query ratings for the specific recipe_id
+        ratings_ref = db.collection('ratings')
+        ratings = ratings_ref.where('recipe_id', '==', recipe_id).get()
+        
         ratings_list = []
         for rating in ratings:
             rating_data = rating.to_dict()
             rating_data['id'] = rating.id
+            # Convert Firestore Timestamp to ISO format string
+            if 'created_at' in rating_data and rating_data['created_at']:
+                rating_data['created_at'] = rating_data['created_at'].isoformat()
             ratings_list.append(rating_data)
-
+        
+        
         return jsonify({
             "ratings": ratings_list,
             "status": "success"
         }), 200
     except Exception as e:
+        print(f"Error in get_ratings: {str(e)}")
         return jsonify({
             "error": str(e),
             "status": "error"
