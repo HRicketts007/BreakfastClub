@@ -29,7 +29,7 @@ const handleExportCalendar = async (planId, planType) => {
     if (!startDate) return; // User cancelled
 
     const response = await axios.get(
-      `http://localhost:6969/generate_calendar?plan_id=${planId}&start_date=${startDate}&plan_type=${planType}`,
+      `http://45.56.112.26:6969/generate_calendar?plan_id=${planId}&start_date=${startDate}&plan_type=${planType}`,
       { responseType: 'blob' }
     );
     const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -58,7 +58,7 @@ const MealPlanView = () => {
     const fetchPlan = async () => {
       try {
         console.log("Fetching plan with ID:", planId);
-        const response = await axios.get(`http://localhost:6969/Get_Meal_Plan/${planId}`);
+        const response = await axios.get(`http://45.56.112.26:6969/Get_Meal_Plan/${planId}`);
         console.log("Raw response:", response.data);
         setPlan({
           type: response.data.meal_plan.type,
@@ -338,7 +338,7 @@ const MyMeals = () => {
   useEffect(() => {
     const fetchMealPlans = async () => {
       try {
-        const response = await axios.get('http://localhost:6969/user/meal_plans');
+        const response = await axios.get('http://45.56.112.26:6969/user/meal_plans');
         if (response.data.status === 'success') {
           setSavedMealPlans(response.data.meal_plans);
         }

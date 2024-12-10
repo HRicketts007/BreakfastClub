@@ -17,7 +17,7 @@ const GroceryList = () => {
   const fetchGroceryItems = async () => {
     try {
       const token = await getIdToken();
-      const response = await axios.get('http://localhost:6969/grocery/items', {
+      const response = await axios.get('http://45.56.112.26:6969/grocery/items', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.status === 'success') {
@@ -35,7 +35,7 @@ const GroceryList = () => {
   const updateGroceryItems = async (items) => {
     try {
       const token = await getIdToken();
-      await axios.post('http://localhost:6969/grocery/items', 
+      await axios.post('http://45.56.112.26:6969/grocery/items',
         { items },
         { headers: { Authorization: `Bearer ${token}` }}
       );

@@ -25,14 +25,14 @@ const GroceryModal = ({ ingredients = [], onConfirm }) => {
     
     try {
       const token = await getIdToken();
-      const response = await axios.get('http://localhost:6969/grocery/items', {
+      const response = await axios.get('http://45.56.112.26:6969/grocery/items', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const existingItems = response.data.items || [];
       const updatedItems = [...new Set([...existingItems, ...selectedIngredients])];
       
       await axios.post(
-        'http://localhost:6969/grocery/items',
+        'http://45.56.112.26:6969/grocery/items',
         { items: updatedItems },
         { headers: { Authorization: `Bearer ${token}` }}
       );

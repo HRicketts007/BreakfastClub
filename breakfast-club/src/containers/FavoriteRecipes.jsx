@@ -15,12 +15,12 @@ const FavoriteRecipes = () => {
   const fetchFavorites = async () => {
     try {
       // First get the list of favorite IDs
-      const favoritesResponse = await axios.get('http://localhost:6969/favorites');
+      const favoritesResponse = await axios.get('http://45.56.112.26:6969/favorites');
       const favoriteIds = favoritesResponse.data.favorites;
 
       // Then fetch full recipe details for each ID
       const recipesPromises = favoriteIds.map(id =>
-        axios.get(`http://localhost:6969/get_recipe/${id}`)
+        axios.get(`http://45.56.112.26:6969/get_recipe/${id}`)
       );
       
       const recipesResponses = await Promise.all(recipesPromises);
